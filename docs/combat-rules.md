@@ -63,11 +63,13 @@ Resolution also returns `frames`: each frame pairs an emitted event with a new s
 
 ## Replay contract
 
-The same starting state and ordered timestamped actions must produce identical states and events under the same rules version. Saved practice runs record format version 1, rules version `shooter-demo-v1`, scenario ID `practice`, initial HP/damage/equipment configuration, and ordered player decisions. Loading validates those inputs and regenerates boss actions through practice. Computed state and events are not stored as trusted inputs. Unknown versions are rejected. No randomness is used yet; future randomness must have an explicit seed.
+The same starting state and ordered timestamped actions must produce identical states and events under the same rules version. New saved practice runs record format version 1, rules version `shooter-demo-v2`, scenario ID `practice`, initial HP/damage/equipment configuration, and ordered player decisions. Loading validates those inputs and regenerates boss actions through practice. Computed state and events are not stored as trusted inputs. Unknown versions are rejected. No randomness is used yet. Future randomness must have an explicit seed.
+
+Existing `shooter-demo-v1` saves keep their five-second schedule with middle warning/impact at +1,500/+2,500 ms and top at +3,000/+4,000 ms. Their session retains v1 when resumed or saved again. New practice uses v2. The original browser save key and format version remain supported.
 
 ## Practice sandbox
 
-- Practice repeats a five-second boss cycle: middle lane warned at +1,500 ms and hit at +2,500 ms; top lane warned at +3,000 ms and hit at +4,000 ms. Bottom is intentionally safe in this teaching pattern.
+- Current practice repeats a six-second boss cycle. Middle is warned at +1,500 ms and hit at +2,500 ms, top at +3,000/+4,000 ms, and bottom at +4,500/+5,500 ms. The next cycle's first warning is at 7,500 ms.
 - Choose Wide Shot or Laser, and whether VX-5 rockets are equipped, before the first action. Equipment is fixed for that run.
 - The player chooses a timestamp and a move, corrosion application, confirmed weapon hit, or time advance. Boss warnings due by that timestamp are submitted first in chronological order. The engine resolves pending impacts and expiration using the existing rules.
 - Practice accepts one confirmed hit per weapon interval: Wide Shot 250 ms, Laser 500 ms, VX-5 1,000 ms. Each weapon has an independent readiness time, initially 0. Accept hits exactly at readiness; reject earlier hits without changing the session or advancing time. Update readiness only when the hit actually resolves. Core/training hit resolution remains independent of this cadence policy.
@@ -77,7 +79,7 @@ The same starting state and ordered timestamped actions must produce identical s
 - Both boss actions and player decisions are recorded in order in memory. Replay starts from that run's original equipment and HP and reproduces its events. Watching a replay does not alter the practice session; the player can return and continue it.
 - Time-only decisions can advance the final state without adding combat events. A replay with no combat events shows the final clock value. New practice clears the active run but does not delete the saved slot.
 - Save run persists one practice run in browser storage; Load saved run reconstructs it. JSON export/import supports portability. Invalid files or failed storage operations do not replace the current session. Practice timestamps are bounded to 120 seconds, and saved files to 2,000 decisions and a bounded JSON size.
-- The complete example obeys practice cadence and wins at 7,500 ms with 90 player HP remaining. `examples/victory.json` stores its portable inputs. Training replay remains a short diagnostic excerpt, not a completed encounter.
+- The current complete example obeys practice cadence and wins at 7,500 ms with 80 player HP remaining after taking damage at 2,500 and 5,500 ms. `examples/victory.json` stores its v2 inputs. `examples/victory-v1.json` preserves the original v1 example and its 90 HP outcome. Training replay remains a short diagnostic excerpt.
 
 ## Previous learning example
 

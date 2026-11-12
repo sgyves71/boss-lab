@@ -43,3 +43,26 @@ test('a complete victory survives save/load without storing computed state', () 
   const fixture = readFileSync(new URL('../examples/victory.json', import.meta.url), 'utf8');
   assert.deepEqual(deserializeRun(fixture), example);
 });
+
+test('v1 saves preserve the original schedule, outcome, and version when saved again', () => {
+  const fixture = readFileSync(new URL('../examples/victory-v1.json', import.meta.url), 'utf8');
+  const legacy = deserializeRun(fixture);
+  assert.equal(legacy.rulesVersion, 'shooter-demo-v1');
+  assert.equal(legacy.state.playerHp, 90);
+  assert.equal(legacy.state.result, 'boss-defeated');
+  assert.ok(legacy.frames.some((frame) => frame.event.type === 'boss-shot-fired' && frame.event.atMs === 6500));
+  assert.equal(JSON.parse(serializeRun(legacy)).rulesVersion, 'shooter-demo-v1');
+  assert.deepEqual(deserializeRun(serializeRun(legacy)), legacy);
+
+  const saved = JSON.parse(fixture);
+  saved.decisions = saved.decisions.filter((input: { atMs: number }) => input.atMs <= 5000);
+  const resumed = actInPractice(deserializeRun(JSON.stringify(saved)), { type: 'advance-time', atMs: 7500 });
+  assert.equal(resumed.state.playerHp, 90);
+  assert.ok(resumed.frames.some((frame) => frame.event.type === 'boss-shot-fired' && frame.event.atMs === 6500));
+  assert.deepEqual(deserializeRun(serializeRun(resumed)), resumed);
+
+  saved.rulesVersion = 'shooter-demo-v2';
+  const current = actInPractice(deserializeRun(JSON.stringify(saved)), { type: 'advance-time', atMs: 7500 });
+  assert.equal(current.state.playerHp, 80);
+  assert.equal(current.rulesVersion, 'shooter-demo-v2');
+});

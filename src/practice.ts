@@ -5,8 +5,16 @@ export const FIRING_INTERVAL_MS: Readonly<Record<Weapon, number>> = {
   'wide-shot': 250, laser: 500, 'vx-5': 1000,
 };
 export const MAX_PRACTICE_TIME_MS = 120_000;
+export const CURRENT_RULES_VERSION = 'shooter-demo-v2';
+export type PracticeRulesVersion = 'shooter-demo-v1' | typeof CURRENT_RULES_VERSION;
 
-function bossActionAt(index: number): Extract<BattleAction, { type: 'boss-fire' }> {
+function bossActionAt(index: number, rulesVersion: PracticeRulesVersion): Extract<BattleAction, { type: 'boss-fire' }> {
+  if (rulesVersion === 'shooter-demo-v1') {
+    const cycleStart = Math.floor(index / 2) * 5000;
+    const atMs = cycleStart + (index % 2 === 0 ? 1500 : 3000);
+    return { type: 'boss-fire', atMs, impactAtMs: atMs + 1000,
+      lane: index % 2 === 0 ? 'middle' : 'top' };
+  }
   const cycleStart = Math.floor(index / 3) * 6000;
   const position = index % 3;
   const offset = position === 0 ? 1500 : position === 1 ? 3000 : 4500;
@@ -21,6 +29,7 @@ function bossActionAt(index: number): Extract<BattleAction, { type: 'boss-fire' 
 }
 
 export type PracticeSession = Readonly<{
+  rulesVersion: PracticeRulesVersion;
   initialState: BattleState;
   state: BattleState;
   actions: readonly BattleAction[];
@@ -30,14 +39,17 @@ export type PracticeSession = Readonly<{
   nextHitAtMs: Readonly<Record<Weapon, number>>;
 }>;
 
-export function createPractice(options: Parameters<typeof createBattle>[0] = {}): PracticeSession {
+export function createPractice(
+  options: Parameters<typeof createBattle>[0] = {},
+  rulesVersion: PracticeRulesVersion = CURRENT_RULES_VERSION,
+): PracticeSession {
   const initialState = createBattle(options);
-  return { initialState, state: initialState, actions: [], decisions: [], frames: [], nextBossAction: 0,
+  return { rulesVersion, initialState, state: initialState, actions: [], decisions: [], frames: [], nextBossAction: 0,
     nextHitAtMs: { 'wide-shot': 0, laser: 0, 'vx-5': 0 } };
 }
 
 export function nextBossWarning(session: PracticeSession) {
-  return bossActionAt(session.nextBossAction);
+  return bossActionAt(session.nextBossAction, session.rulesVersion);
 }
 
 /** Merge the fixed boss schedule with player decisions on the shared simulation clock. */
@@ -62,7 +74,7 @@ export function actInPractice(session: PracticeSession, action: PlayerAction): P
     frames.push(...resolution.frames);
   }
   while (true) {
-    const bossAction = bossActionAt(nextBossAction);
+    const bossAction = bossActionAt(nextBossAction, session.rulesVersion);
     if (bossAction.atMs > action.atMs) break;
     submit(bossAction);
     nextBossAction += 1;
@@ -75,6 +87,6 @@ export function actInPractice(session: PracticeSession, action: PlayerAction): P
       nextHitAtMs[action.weapon] = action.atMs + FIRING_INTERVAL_MS[action.weapon];
     }
   }
-  return { initialState: session.initialState, state, actions,
+  return { rulesVersion: session.rulesVersion, initialState: session.initialState, state, actions,
     decisions: [...session.decisions, action], frames, nextBossAction, nextHitAtMs };
 }

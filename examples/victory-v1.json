@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "rulesVersion": "shooter-demo-v1",
+  "scenarioId": "practice",
+  "initial": {
+    "playerHp": 100,
+    "bossHp": 500,
+    "bossShotDamage": 10,
+    "mainWeapon": "laser",
+    "vx5Equipped": true
+  },
+  "decisions": [
+    {
+      "type": "hit",
+      "atMs": 0,
+      "weapon": "vx-5"
+    },
+    {
+      "type": "apply-shield-corrosion",
+      "atMs": 1000
+    },
+    {
+      "type": "hit",
+      "atMs": 1000,
+      "weapon": "vx-5"
+    },
+    {
+      "type": "hit",
+      "atMs": 2000,
+      "weapon": "vx-5"
+    },
+    {
+      "type": "hit",
+      "atMs": 3000,
+      "weapon": "vx-5"
+    },
+    {
+      "type": "move",
+      "atMs": 3500,
+      "lane": "bottom"
+    },
+    {
+      "type": "hit",
+      "atMs": 4000,
+      "weapon": "vx-5"
+    },
+    {
+      "type": "apply-shield-corrosion",
+      "atMs": 5000
+    },
+    {
+      "type": "hit",
+      "atMs": 5000,
+      "weapon": "vx-5"
+    },
+    {
+      "type": "hit",
+      "atMs": 6000,
+      "weapon": "vx-5"
+    },
+    {
+      "type": "hit",
+      "atMs": 7000,
+      "weapon": "vx-5"
+    },
+    {
+      "type": "hit",
+      "atMs": 7500,
+      "weapon": "laser"
+    }
+  ]
+}

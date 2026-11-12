@@ -10,7 +10,7 @@ The app has three lanes and confirmed hits. It deliberately leaves out projectil
 
 ## 0:30 — Show a complete encounter
 
-Select **Complete fight**, then step through to the first incoming hit at 2.5 seconds. The ship reacts and drops from 100 to 90 HP. Later it changes lane, avoids another shot, and wins at 7.5 seconds. **Show outcome** jumps to that final result.
+Select **Complete fight**, then step through to the first incoming hit at 2.5 seconds. The ship reacts and drops from 100 to 90 HP. Later it moves bottom and avoids the top-lane shot. The bottom-lane attack hits at 5.5 seconds, and the player wins at 7.5 seconds with 80 HP. **Show outcome** jumps to that final result.
 
 "This example uses exactly the same practice runner as a player's decisions. It is not a separate animation with hard-coded HP."
 
@@ -24,7 +24,7 @@ Open the first test in `src/combat.test.ts`. Explain how changing `>=` to `>` ma
 
 ## 2:30 — Make and reproduce a decision
 
-Select **Practice**, set action time to `1.000`, and apply Shield Corrosion. Set time to `2.000` and choose **Top lane**. Set time to `3.000` and land a VX-5 hit. The first boss shot has missed. Staying top until 4 seconds would take damage; moving bottom at 3.5 seconds avoids it.
+Select **Practice**, set action time to `1.000`, and apply Shield Corrosion. Set time to `2.000` and choose **Top lane**. Set time to `3.000` and land a VX-5 hit. The first boss shot has missed. Move bottom at 3.5 seconds to avoid the top shot at 4 seconds, then move middle before the bottom shot arrives at 5.5 seconds.
 
 Select **Replay my run**. The recorded decisions reproduce the events. Return to practice, save the run, reload the page, and load it again. An exported JSON file contains versioned starting configuration and decisions, not trusted result data.
 
@@ -42,4 +42,4 @@ Open the latest successful GitHub Actions run and its tested commit. Show the sm
 
 "A future change will be one rule or behavior at a time: state the intended outcome, add a meaningful regression, implement it, run the same checks in CI, review the diff, and publish a new version. A green CI run and a published demo are separate pieces of evidence."
 
-Close with a deliberate tradeoff: the bottom lane is safe in this teaching pattern. A more interesting boss pattern is a good next iteration; real-time movement and collision simulation would be a later, separate milestone.
+Show the iteration from v0.1's two-lane pattern to the current three-lane cycle. Import `examples/victory-v1.json` to demonstrate that the old saved run still finishes with 90 HP under its original rules. A new run uses v2 and the same decisions finish with 80 HP. This shows why replay versions matter. Real-time movement and collision simulation can be a later, separate milestone.
