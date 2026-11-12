@@ -7,10 +7,17 @@ export const FIRING_INTERVAL_MS: Readonly<Record<Weapon, number>> = {
 export const MAX_PRACTICE_TIME_MS = 120_000;
 
 function bossActionAt(index: number): Extract<BattleAction, { type: 'boss-fire' }> {
-  const cycleStart = Math.floor(index / 2) * 5000;
-  const atMs = cycleStart + (index % 2 === 0 ? 1500 : 3000);
-  return { type: 'boss-fire', atMs, impactAtMs: atMs + 1000,
-    lane: index % 2 === 0 ? 'middle' : 'top' };
+  const cycleStart = Math.floor(index / 3) * 6000;
+  const position = index % 3;
+  const offset = position === 0 ? 1500 : position === 1 ? 3000 : 4500;
+  const lane = position === 0 ? 'middle' : position === 1 ? 'top' : 'bottom';
+  const atMs = cycleStart + offset;
+  return {
+    type: 'boss-fire',
+    atMs,
+    impactAtMs: atMs + 1000,
+    lane,
+  };
 }
 
 export type PracticeSession = Readonly<{

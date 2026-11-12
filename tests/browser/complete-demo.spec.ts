@@ -19,7 +19,7 @@ test('a new reviewer can inspect a complete victory and return to a fresh practi
   await expect(page.locator('#player-damage')).toBeHidden();
   await page.getByRole('button', { name: 'Show outcome', exact: true }).click();
   await expect(page.getByTestId('boss-hp')).toHaveText('0 / 500');
-  await expect(page.getByTestId('player-hp')).toHaveText('90 / 100');
+  await expect(page.getByTestId('player-hp')).toHaveText('80 / 100');
   await expect(page.getByTestId('time')).toHaveText('7.500s');
   await expect(page.locator('#battle-status')).toContainText('VICTORY');
   await expect(page.locator('#combat-log')).toContainText('Boss defeated');
@@ -41,8 +41,8 @@ test('practice explains cadence and repeats boss warnings after the first cycle'
   await page.getByLabel('Action time (seconds)').fill('1');
   await page.getByRole('button', { name: 'VX-5 hit', exact: true }).click();
   await expect(page.getByTestId('boss-hp')).toHaveText('430 / 500');
-  await page.getByLabel('Action time (seconds)').fill('6.5');
+  await page.getByLabel('Action time (seconds)').fill('7.5');
   await page.getByRole('button', { name: 'Advance to time', exact: true }).click();
-  await expect(page.locator('#combat-log')).toContainText('6.500sWarning: middle lane targeted');
+  await expect(page.locator('#combat-log')).toContainText('7.500sWarning: middle lane targeted');
   await expect(page.locator('[data-lane="middle"]')).toHaveClass(/targeted/);
 });
