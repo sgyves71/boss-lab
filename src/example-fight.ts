@@ -6,7 +6,6 @@ export function createExampleVictory() {
     { type: 'hit', atMs: 0, weapon: 'vx-5' },
     { type: 'apply-shield-corrosion', atMs: 1000 },
     { type: 'hit', atMs: 1000, weapon: 'vx-5' },
-    { type: 'move', atMs: 2000, lane: 'top' },
     { type: 'hit', atMs: 2000, weapon: 'vx-5' },
     { type: 'hit', atMs: 3000, weapon: 'vx-5' },
     { type: 'move', atMs: 3500, lane: 'bottom' },

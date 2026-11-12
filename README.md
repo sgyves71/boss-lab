@@ -18,7 +18,7 @@ Open the local address printed in the terminal, normally `http://127.0.0.1:5173`
 ## A three-minute tour
 
 1. **Training replay:** use Next event to see the timing boundary. Corrosion applied at 1 second boosts a rocket at 3.999 seconds; it expires before damage at 4 seconds. The log shows expiration, incoming damage, and rocket damage separately.
-2. **Complete fight:** inspect a full victory with legal firing intervals and repeated boss attacks. Show outcome jumps to the final state: boss 0 HP, player 100 HP, at 7.5 seconds. Back and Restart let you inspect how it happened.
+2. **Complete fight:** inspect a full victory with legal firing intervals and repeated boss attacks. Show outcome jumps to the final state: boss 0 HP, player 90 HP, at 7.5 seconds. Back and Restart let you inspect how it happened.
 3. **Practice:** choose your loadout before the first action. Enter an action time, then move, apply corrosion, register a hit, or advance time. Typing alone does not advance the simulation. The +0.25s and +1s buttons advance from the current clock.
 4. **Replay and save:** Replay my run inspects your decisions; Return to practice resumes the original session. Save run stores one practice run in this browser. Load saved run restores it after a reload. Export JSON and Import JSON let you keep or share a copy.
 

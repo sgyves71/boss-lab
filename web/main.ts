@@ -64,7 +64,7 @@ app.innerHTML = `
           <div class="arena" aria-label="Three-lane battlefield">
             <div class="stars"></div>
             ${(['top', 'middle', 'bottom'] as const).map((lane) => `<div class="lane" data-lane="${lane}"><span class="lane-label">${lane.toUpperCase()}</span><span class="lane-warning">TARGETED LANE</span></div>`).join('')}
-            <div id="player-ship" class="player-ship" role="img">${playerShip}<span>YOU</span></div>
+            <div id="player-ship" class="player-ship" role="img">${playerShip}<span>YOU</span><strong id="player-damage" class="player-damage" hidden></strong></div>
             <div class="boss-ship" role="img" aria-label="Boss spacecraft">${bossShip}<span>BOSS</span></div>
             <div id="hit-flash" class="hit-flash" aria-hidden="true"></div>
             <div class="arena-footer"><span>SIMULATION TIME <strong id="time" data-testid="time"></strong></span><span id="lane-status"></span></div>
@@ -196,6 +196,10 @@ function render() {
   next.disabled = complete;
   next.innerHTML = complete ? 'Replay complete <span>✓</span>' : 'Next event <span>→</span>';
   element('hit-flash').className = `hit-flash ${frame?.event.type === 'damage' ? 'visible' : ''}`;
+  const playerHit = frame?.event.type === 'player-damaged';
+  element('player-ship').classList.toggle('taking-damage', playerHit);
+  element('player-damage').hidden = !playerHit;
+  text('player-damage', playerHit ? `−${frame.event.amount} HP` : '');
   if (inPractice) {
     const finished = state.result !== 'ongoing';
     const started = practice.actions.length > 0;

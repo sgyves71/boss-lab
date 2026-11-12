@@ -82,7 +82,7 @@ test('the complete example uses legal cadence, dodges across cycles, and wins re
   const example = createExampleVictory();
   assert.equal(example.state.result, 'boss-defeated');
   assert.equal(example.state.bossHp, 0);
-  assert.equal(example.state.playerHp, 100);
+  assert.equal(example.state.playerHp, 90);
   assert.equal(example.state.timeMs, 7500);
   assert.deepEqual(replayBattle(example.initialState, example.actions).finalState, example.state);
   assert.ok(example.frames.some((frame) => frame.event.type === 'boss-shot-fired' && frame.event.atMs === 6500));

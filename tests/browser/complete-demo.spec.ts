@@ -7,9 +7,19 @@ test('a new reviewer can inspect a complete victory and return to a fresh practi
   await expect(page.locator('.demo-guide details')).toContainText('deterministic TypeScript simulation');
   await page.getByRole('button', { name: 'Complete fight', exact: true }).click();
   await expect(page.getByTestId('boss-hp')).toHaveText('500 / 500');
+  for (let step = 0; step < 30 && await page.locator('#player-damage').isHidden(); step += 1) {
+    await page.getByRole('button', { name: 'Next event' }).click();
+  }
+  await expect(page.locator('#player-damage')).toHaveText('−10 HP');
+  await expect(page.locator('#player-damage')).toBeVisible();
+  await expect(page.locator('#player-ship')).toHaveClass(/taking-damage/);
+  await expect(page.getByTestId('player-hp')).toHaveText('90 / 100');
+  await page.screenshot({ path: 'test-results/player-hit.png', fullPage: true, animations: 'disabled' });
+  await page.getByRole('button', { name: 'Next event' }).click();
+  await expect(page.locator('#player-damage')).toBeHidden();
   await page.getByRole('button', { name: 'Show outcome', exact: true }).click();
   await expect(page.getByTestId('boss-hp')).toHaveText('0 / 500');
-  await expect(page.getByTestId('player-hp')).toHaveText('100 / 100');
+  await expect(page.getByTestId('player-hp')).toHaveText('90 / 100');
   await expect(page.getByTestId('time')).toHaveText('7.500s');
   await expect(page.locator('#battle-status')).toContainText('VICTORY');
   await expect(page.locator('#combat-log')).toContainText('Boss defeated');

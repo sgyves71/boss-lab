@@ -8,7 +8,7 @@ The local demo now has a clear reviewer journey: a short timing lesson, a comple
 - User-approved practice cadence: Wide Shot 8 damage every 250 ms, Laser 14 every 500 ms, VX-5 35 every 1,000 ms.
 - Shield Corrosion lasts 3 seconds and doubles VX-5 damage to 70 at impact. Expiration uses an exclusive end boundary.
 - User-approved boss pattern repeats every 5 seconds: middle warning at +1.5s / impact +2.5s, top warning at +3s / impact +4s. Bottom remains a safe teaching lane.
-- Complete fight is a legal practice victory at 7.5 seconds, player HP 100 and boss HP 0. A portable input fixture is included at `examples/victory.json`.
+- Complete fight is a legal practice victory at 7.5 seconds, player HP 90 and boss HP 0. A portable input fixture is included at `examples/victory.json`.
 - Practice records decisions and generated actions. Event snapshots support forward/back playback without duplicating rules in the UI.
 - Save/load uses one browser-local slot; JSON export/import allows sharing. Rules version and input validation prevent incompatible or impossible runs from replacing the active session.
 - README includes a short tour, run/check commands, limits, and source links. `docs/architecture.md` explains boundaries, persistence, tradeoffs, and an interview walkthrough.

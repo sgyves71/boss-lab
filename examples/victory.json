@@ -25,11 +25,6 @@
       "weapon": "vx-5"
     },
     {
-      "type": "move",
-      "atMs": 2000,
-      "lane": "top"
-    },
-    {
       "type": "hit",
       "atMs": 2000,
       "weapon": "vx-5"

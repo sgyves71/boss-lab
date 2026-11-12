@@ -77,7 +77,7 @@ The same starting state and ordered timestamped actions must produce identical s
 - Both boss actions and player decisions are recorded in order in memory. Replay starts from that run's original equipment and HP and reproduces its events. Watching a replay does not alter the practice session; the player can return and continue it.
 - Time-only decisions can advance the final state without adding combat events. A replay with no combat events shows the final clock value. New practice clears the active run but does not delete the saved slot.
 - Save run persists one practice run in browser storage; Load saved run reconstructs it. JSON export/import supports portability. Invalid files or failed storage operations do not replace the current session. Practice timestamps are bounded to 120 seconds, and saved files to 2,000 decisions and a bounded JSON size.
-- The complete example obeys practice cadence and wins at 7,500 ms with 100 player HP remaining. `examples/victory.json` stores its portable inputs. Training replay remains a short diagnostic excerpt, not a completed encounter.
+- The complete example obeys practice cadence and wins at 7,500 ms with 90 player HP remaining. `examples/victory.json` stores its portable inputs. Training replay remains a short diagnostic excerpt, not a completed encounter.
 
 ## Previous learning example
 

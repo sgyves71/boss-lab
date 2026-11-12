@@ -144,6 +144,10 @@ input[type=checkbox] { accent-color: var(--mint); }
 .save-buttons { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .save-strip p { font-size: 11px; color: #aabdb0; line-height: 1.8; margin: 8px 0; }
 .boss-ship.defeated { opacity: .35; filter: grayscale(1); }
+.player-ship.taking-damage svg { filter: drop-shadow(0 0 12px #ff795c); animation: ship-impact .35s ease-out; }
+.player-damage { position: absolute; top: -22px; left: 0; width: 100%; text-align: center; color: #ffb19e; font: 600 13px 'IBM Plex Mono', monospace; white-space: nowrap; }
+@keyframes ship-impact { 0%, 50% { transform: translateX(-6px); opacity: .45; } 25%, 75% { transform: translateX(3px); opacity: 1; } 100% { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .player-ship.taking-damage svg { animation: none; } }
 .battle-status { padding: 13px 24px; color: #c4d5c8; font-size: 11px; line-height: 1.8; margin: 0; border-bottom: 1px solid var(--line); }
 .battle-status[data-result=boss-defeated] { color: var(--mint); background: #25392c; }
 .battle-status[data-result=player-defeated] { color: #ffc28b; background: #382d24; }
