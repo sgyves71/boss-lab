@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug combat tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["--test", "--test-concurrency=1"],
+      "program": "${workspaceFolder}/src/combat.test.ts",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    }
+  ]
+}

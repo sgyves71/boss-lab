@@ -15,6 +15,15 @@ Use Codex in VS Code for hands-on work and ChatGPT for milestone check-ins. Brin
 
 ## Upcoming milestones
 
-- **First engine test.** Set up TypeScript and encode the turn-2 regression. Verify the test catches the reversed event order, then implement the correct behavior.
+### First engine test status
+
+- The initial documentation commit is complete (`28b344d`).
+- `src/combat.ts` defines the typed, UI-independent turn contract and first resolver. Each call runs start-of-turn effects, the move, and the attack, then advances if the fight continues.
+- `npm test` runs the engine tests with Node.js 24 or newer. The original placeholder failed because the resolver was unimplemented; the implemented resolver passes.
+- Temporarily resolving Ember Mark before Storm Ward expiration makes the two-turn regression fail: Veyra has 18 HP instead of 16. The correct order was restored and the regression passed again.
+- Additional engine tests cover blocked ticks, reapplication, Strike, Guard duration, HP clamping, and immediate fight completion.
+- Strict TypeScript checking is configured via `npm run typecheck`; `npm run check` runs it followed by all six engine tests. VS Code tasks, a test debugger configuration, and workspace TypeScript settings are included.
+
+- **First engine test.** Implemented and verified, including the reversed-effect regression check described above.
 - **Playable fight and replay.** Build the browser fight and replay flow. Add Playwright coverage and run the checks in GitHub Actions. Keep one Cypress replay spec for comparison.
 - **Stormbreak.** After the first fight is playable and replayable, add Veyra's below-half-health phase. Honor her current telegraph and use the new attack pattern on the following turn.
