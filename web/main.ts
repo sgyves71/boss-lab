@@ -48,7 +48,7 @@ function describe(event: CombatEvent): { title: string; detail: string; kind: st
 
 app.innerHTML = `
   <div class="shell">
-    <header class="masthead"><a class="brand" href="/" aria-label="Boss Lab home"><span class="brand-mark">B<span>↗</span></span>BOSS LAB<span class="brand-slash">/</span><span class="brand-sub">COMBAT STUDIES</span></a><span class="local-label"><i></i> LOCAL PROTOTYPE</span></header>
+    <header class="masthead"><a class="brand" href="/" aria-label="Boss Lab home"><span class="brand-mark">B<span>↗</span></span>BOSS LAB<span class="brand-slash">/</span><span class="brand-sub">COMBAT STUDIES</span></a><div class="header-links"><a class="source-link" href="https://github.com/sgyves71/boss-lab" target="_blank" rel="noopener noreferrer">Source ↗</a><span class="local-label"><i></i> INTERVIEW DEMO</span></div></header>
     <main>
       <div class="page-heading"><div><p class="eyebrow">STUDY 001 <span> / </span> TIMING &amp; POSITION</p><h1>Every hit has a moment.</h1><p class="intro">Slow the encounter down. See what lands, what misses, and why.</p></div><span id="mode-tag" class="mode-tag">STEP-BY-STEP REPLAY</span></div>
       <nav class="mode-switch" aria-label="Encounter mode"><button id="training-mode" type="button" aria-pressed="true">Training replay</button><button id="example-mode" type="button" aria-pressed="false">Complete fight</button><button id="practice-mode" type="button" aria-pressed="false">Practice</button><span>Learn the timing. Watch a victory. Try your own decisions.</span></nav>

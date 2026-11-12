@@ -16,6 +16,9 @@ button:disabled { cursor: default; opacity: .42; }
 .brand-sub, .local-label, .eyebrow, .mode-tag, .panel-heading, .health small, .lane-label, .lane-warning, .arena-footer, .corrosion-time, .effect-strip > strong, .log-heading > span, .lesson-label, .lesson-index, footer, .health-label { font-family: 'IBM Plex Mono', monospace; }
 .brand-sub { font-size: 11px; color: var(--muted); font-weight: 400; }
 .local-label { font-size: 10px; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 9px; }
+.header-links { display: flex; align-items: center; gap: 20px; }
+.source-link { color: var(--mint); font: 11px 'IBM Plex Mono', monospace; text-underline-offset: 4px; }
+@media (max-width: 480px) { .header-links { gap: 12px; } .source-link { font-size: 10px; } }
 .local-label i, .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--mint); }
 .page-heading { padding: 45px 0 32px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
 .eyebrow { font-size: 10px; letter-spacing: .12em; color: var(--amber); margin: 0 0 13px; }

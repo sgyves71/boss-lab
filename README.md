@@ -2,6 +2,10 @@
 
 A small TypeScript boss-fight demo about explaining and reproducing combat. Choose a weapon, dodge warned attacks, and time **Shield Corrosion** to double VX-5 rocket damage. Then replay each event to see why the outcome happened.
 
+[Open the demo](https://boss-lab-sgyves71.outstandingnewt8.chatgpt.site) · [Source](https://github.com/sgyves71/boss-lab) · [CI runs](https://github.com/sgyves71/boss-lab/actions/workflows/ci.yml) · [Five-minute walkthrough](docs/demo-walkthrough.md)
+
+[![Check demo](https://github.com/sgyves71/boss-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/sgyves71/boss-lab/actions/workflows/ci.yml)
+
 The project is intentionally a simulation with three lanes and confirmed projectile hits. It demonstrates deterministic rules, immutable state, versioned replay inputs, validation, and automated tests without requiring a full arcade engine.
 
 ## Run locally
@@ -47,6 +51,7 @@ Practice accepts timestamps up to 120 seconds to bound schedule processing. It h
 - [Architecture and interview walkthrough](docs/architecture.md): action flow, boundaries, tradeoffs, and the timing regression.
 - [Combat rules](docs/combat-rules.md): exact ordering, expiration, equipment, and defeat behavior.
 - [Progress history](docs/progress.md): how the example developed from a turn-based regression into a shooter simulation.
+- [Iteration plan](docs/iteration-plan.md): how to add a rule, test it, review a pull request, and publish the next version.
 - `src/combat.ts`: pure rule resolution, with no DOM, storage, or wall clock.
 - `src/practice.ts`: repeating boss schedule, cadence, and recorded decisions.
 - `src/saved-run.ts`: versioned input serialization and validation. Saved HP and event logs are never trusted; loading replays the decisions.
@@ -70,6 +75,10 @@ npm run test:e2e    # browser journeys
 npm run demo        # short terminal timing example
 ```
 
-Playwright starts and stops a local server on port 4173. Screenshots and failure traces are written to ignored `test-results/`. The GitHub Actions workflow runs the same layers on pushes and pull requests and keeps failure artifacts. It requires a GitHub remote and a pushed commit to execute; adding the workflow locally does not constitute a hosted CI run.
+Playwright starts and stops a local server on port 4173. Screenshots and failure traces are written to ignored `test-results/`. The GitHub Actions workflow runs the same layers on pushes and pull requests and keeps failure artifacts. Check the linked Actions page for the result on a particular commit.
+
+## Publish the next iteration
+
+`origin` is the public source repository. Push a focused branch, review its pull request and CI, then merge it. The existing Site is identified by `.openai/hosting.json`; build output is `dist/`. Use the Sites publishing workflow for that existing project after checks pass. GitHub CI does not automatically deploy the Site, and no hosting credentials are stored in this repository. See the [iteration plan](docs/iteration-plan.md) for the full loop.
 
 The UI uses Vite and plain TypeScript. `npm run preview` serves the production build. Google Fonts are optional; fallback fonts keep the app usable offline. In VS Code, choose the workspace TypeScript version if prompted; Ctrl+Shift+B runs quick checks and Debug combat tests supports engine breakpoints.

@@ -2,7 +2,7 @@
 
 ## Current status: complete interview demo
 
-The local demo now has a clear reviewer journey: a short timing lesson, a complete victory, player-controlled practice, and versioned saved replays. The engineering focus is deterministic simulation and explaining outcomes, rather than building a full arcade engine.
+The demo has a clear reviewer journey: a short timing lesson, a complete victory, player-controlled practice, and versioned saved replays. The engineering focus is deterministic simulation and explaining outcomes, rather than building a full arcade engine.
 
 - Starting values: player 100 HP, boss 500 HP, boss projectile damage 10.
 - User-approved practice cadence: Wide Shot 8 damage every 250 ms, Laser 14 every 500 ms, VX-5 35 every 1,000 ms.
@@ -12,7 +12,8 @@ The local demo now has a clear reviewer journey: a short timing lesson, a comple
 - Practice records decisions and generated actions. Event snapshots support forward/back playback without duplicating rules in the UI.
 - Save/load uses one browser-local slot; JSON export/import allows sharing. Rules version and input validation prevent incompatible or impossible runs from replacing the active session.
 - README includes a short tour, run/check commands, limits, and source links. `docs/architecture.md` explains boundaries, persistence, tradeoffs, and an interview walkthrough.
-- GitHub Actions is configured for types, Node tests, build, and Playwright on pushes and pull requests. No remote is configured yet; hosted execution has not been verified.
+- The public source repository is `https://github.com/sgyves71/boss-lab`. GitHub Actions runs types, Node tests, build, and Playwright on pushes and pull requests. The delivery milestone verifies the first hosted run before handoff.
+- The public Site is linked through `.openai/hosting.json`. A five-minute walkthrough and iteration plan describe how the current app becomes a baseline for further development. The release milestone records deployment verification separately from CI.
 
 ## Verification
 
@@ -34,4 +35,4 @@ The local demo now has a clear reviewer journey: a short timing lesson, a comple
 
 Continuous movement, geometric collision detection, homing trajectories, ammunition, resource costs, advanced boss phases, corrosion refresh/stacking, backend accounts, and a replay library are not implemented. The original Cypress migration comparison remains a future comparison exercise; Playwright is the browser runner for this demo.
 
-The next review should assess the finished example and its explanation before choosing deeper shooter development. Publishing or connecting a GitHub remote can be a separate step.
+The next review should assess the shared example and its explanation before choosing deeper shooter development. Future changes follow the branch, test, CI, review, and publish loop in `docs/iteration-plan.md`.
