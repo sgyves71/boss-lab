@@ -1,10 +1,14 @@
 import './style.css';
-import { type CombatEvent, type Lane } from '../src/combat.ts';
+import { type CombatEvent, type Lane, type MainWeapon } from '../src/combat.ts';
 import { replayBattle } from '../src/replay.ts';
 import { createTrainingBattle, TRAINING_ACTIONS } from '../src/scenario.ts';
+import { actInPractice, createPractice, type PlayerAction } from '../src/practice.ts';
 
-const replay = replayBattle(createTrainingBattle(), TRAINING_ACTIONS);
+let replay = replayBattle(createTrainingBattle(), TRAINING_ACTIONS);
 let cursor = 0;
+let mode: 'training' | 'practice' | 'recording' = 'training';
+let practice = createPractice();
+let practiceFeedback: string | null = null;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 const playerShip = `<svg viewBox="0 0 130 70" aria-hidden="true"><path fill="#f5ab50" d="M5 30 33 24 26 6 64 21 96 27 124 35 96 43 64 49 26 64 33 46 5 40 20 35Z"/><path fill="#ede6d7" d="m35 27 38 2 25 6-25 6-38 2 18-8Z"/><path fill="#222f32" d="m59 30 22 5-22 5 8-5Z"/><path fill="#65dfc7" d="m4 31 13 4-13 4Z"/></svg>`;
@@ -17,7 +21,7 @@ function describe(event: CombatEvent): { title: string; detail: string; kind: st
       return { title: `${weapon} hits for ${event.amount} damage`, kind: 'damage',
         detail: event.weapon === 'vx-5'
           ? event.amount === 70 ? 'Shield Corrosion is active at impact: 35 × 2 = 70 damage.'
-            : 'Shield Corrosion has expired. This rocket deals its normal 35 damage.'
+            : 'Shield Corrosion is not active at impact. This rocket deals its normal 35 damage.'
           : 'One projectile landed. Main weapon damage is unaffected by Shield Corrosion.' };
     }
     case 'shield-corrosion-applied':
@@ -27,7 +31,7 @@ function describe(event: CombatEvent): { title: string; detail: string; kind: st
     case 'boss-shot-fired':
       return { title: `Warning: ${event.lane} lane targeted`, kind: 'warning', detail: `The boss shot arrives at ${(event.impactAtMs / 1000).toFixed(3)}s. Move out of this lane before impact to avoid damage.` };
     case 'player-moved':
-      return { title: `Move to the ${event.lane} lane`, kind: 'move', detail: 'The ship moves before the incoming shot arrives. Lane changes are instantaneous in this prototype.' };
+      return { title: `Move to the ${event.lane} lane`, kind: 'move', detail: 'The ship changes lane instantly. Moving before impact avoids a targeted shot; moving exactly at impact is too late.' };
     case 'boss-shot-dodged':
       return { title: 'Boss shot dodged', kind: 'move', detail: `The shot reaches the ${event.lane} lane, but the player has moved away. No HP lost.` };
     case 'player-damaged':
@@ -43,12 +47,13 @@ app.innerHTML = `
   <div class="shell">
     <header class="masthead"><a class="brand" href="/" aria-label="Boss Lab home"><span class="brand-mark">B<span>↗</span></span>BOSS LAB<span class="brand-slash">/</span><span class="brand-sub">COMBAT STUDIES</span></a><span class="local-label"><i></i> LOCAL PROTOTYPE</span></header>
     <main>
-      <div class="page-heading"><div><p class="eyebrow">STUDY 001 <span> / </span> TIMING &amp; POSITION</p><h1>Every hit has a moment.</h1><p class="intro">Slow the encounter down. See what lands, what misses, and why.</p></div><span class="mode-tag">STEP-BY-STEP REPLAY</span></div>
+      <div class="page-heading"><div><p class="eyebrow">STUDY 001 <span> / </span> TIMING &amp; POSITION</p><h1>Every hit has a moment.</h1><p class="intro">Slow the encounter down. See what lands, what misses, and why.</p></div><span id="mode-tag" class="mode-tag">STEP-BY-STEP REPLAY</span></div>
+      <nav class="mode-switch" aria-label="Encounter mode"><button id="training-mode" type="button" aria-pressed="true">Training replay</button><button id="practice-mode" type="button" aria-pressed="false">Practice</button><span>Try your own timing, then replay your decisions.</span></nav>
       <div class="workspace">
         <section class="battle-panel" aria-label="Battle replay">
           <div class="panel-heading"><span><i class="live-dot"></i> TRAINING ENCOUNTER</span><span id="step-count"></span></div>
           <div class="health-row">
-            <div class="health player-health"><div class="health-label"><span>PLAYER</span><strong id="player-hp" data-testid="player-hp"></strong></div><progress id="player-health" max="100" value="100" aria-label="Player health"></progress><small>WIDE SHOT <span>+</span> VX-5 ROCKETS</small></div>
+            <div class="health player-health"><div class="health-label"><span>PLAYER</span><strong id="player-hp" data-testid="player-hp"></strong></div><progress id="player-health" max="100" value="100" aria-label="Player health"></progress><small id="loadout-label">WIDE SHOT + VX-5 ROCKETS</small></div>
             <div class="health boss-health"><div class="health-label"><span>BOSS</span><strong id="boss-hp" data-testid="boss-hp"></strong></div><progress id="boss-health" max="500" value="500" aria-label="Boss health"></progress><small>10 DAMAGE / LANDED SHOT</small></div>
           </div>
           <div class="arena" aria-label="Three-lane battlefield">
@@ -60,8 +65,20 @@ app.innerHTML = `
             <div class="arena-footer"><span>SIMULATION TIME <strong id="time" data-testid="time"></strong></span><span id="lane-status"></span></div>
           </div>
           <div class="effect-strip"><span id="effect-light" class="effect-light"></span><div><strong>Shield Corrosion</strong><p id="corrosion-description"></p></div><strong id="corrosion-time" data-testid="corrosion-time"></strong></div>
-          <div class="transport"><button id="restart" class="quiet-button" type="button">↺ <span>Restart</span></button><div class="playback"><button id="previous" class="back-button" type="button" aria-label="Previous event">←</button><button id="next" class="primary-button" type="button">Next event <span>→</span></button></div></div>
-          <p class="transport-note">Time advances when you step. Nothing moves while you read.</p>
+          <section id="practice-controls" class="practice-controls" hidden aria-label="Practice controls">
+            <div class="practice-heading"><strong>Your decisions</strong><button id="new-practice" type="button" class="text-button">New practice</button></div>
+            <div class="loadout-controls"><label>Main weapon<select id="main-weapon" aria-label="Main weapon"><option value="wide-shot">Wide Shot · 8 / hit</option><option value="laser">Laser · 14 / hit</option></select></label><label class="checkbox-label"><input id="rockets-equipped" type="checkbox" checked /> Equip VX-5 rockets</label></div>
+            <p class="practice-hint">Choose equipment before your first action. Boss shots target middle at 2.500s and top at 4.000s.</p>
+            <div class="time-controls"><label for="action-time">Action time (seconds)<input id="action-time" type="number" min="0" step="0.001" value="0.000" /></label><button id="add-quarter" class="action-button" type="button">+0.25s</button><button id="add-second" class="action-button" type="button">+1s</button><button id="wait" class="action-button" type="button">Advance to time</button></div>
+            <fieldset class="lane-controls"><legend>Move at this time</legend><button type="button" class="action-button" data-move="top">Top lane</button><button type="button" class="action-button" data-move="middle">Middle lane</button><button type="button" class="action-button" data-move="bottom">Bottom lane</button></fieldset>
+            <div class="attack-controls"><button id="main-hit" type="button" class="action-button">Main weapon hit</button><button id="rocket-hit" type="button" class="action-button">VX-5 hit</button><button id="apply-corrosion" type="button" class="action-button">Apply Shield Corrosion</button></div>
+            <p id="practice-error" class="practice-error" role="alert"></p>
+            <p class="practice-hint">Sandbox: hits are confirmed landings, with no firing rate or action cost yet. Time changes only when you submit an action. The boss fires twice.</p>
+            <button id="replay-run" class="primary-button" type="button">Replay my run <span>→</span></button>
+          </section>
+          <div id="replay-transport" class="transport"><button id="restart" class="quiet-button" type="button">↺ <span>Restart</span></button><div class="playback"><button id="previous" class="back-button" type="button" aria-label="Previous event">←</button><button id="next" class="primary-button" type="button">Next event <span>→</span></button></div></div>
+          <p id="replay-hint" class="transport-note">Time advances when you step. Nothing moves while you read.</p>
+          <button id="resume-practice" type="button" class="resume-button" hidden>Return to practice</button>
         </section>
         <aside class="inspector" aria-label="Event details">
           <div class="panel-heading"><span>WHAT JUST HAPPENED</span><span id="event-time"></span></div>
@@ -69,8 +86,8 @@ app.innerHTML = `
           <section class="log-section"><div class="log-heading"><h2>Combat log</h2><span>IN RESOLUTION ORDER</span></div><ol id="combat-log" aria-label="Combat log"></ol></section>
         </aside>
       </div>
-      <section class="lesson"><span class="lesson-label">THE RULE TO WATCH</span><p>A rocket at <strong>3.999s</strong> deals <strong class="mint">70 damage.</strong> At <strong>4.000s</strong>, corrosion expires first. The next rocket deals <strong class="amber">35.</strong></p><span class="lesson-index">01 / TIMING</span></section>
-      <footer><span>A SMALL ENCOUNTER. ONE EVENT AT A TIME.</span><span>Scripted replay · Movement &amp; hits are predetermined</span></footer>
+      <section class="lesson"><span class="lesson-label">THE RULE TO WATCH</span><p>Apply corrosion at <strong>1.000s</strong>: a rocket at <strong>3.999s</strong> deals <strong class="mint">70 damage.</strong> At <strong>4.000s</strong>, corrosion expires first. The next rocket deals <strong class="amber">35.</strong></p><span class="lesson-index">01 / TIMING</span></section>
+      <footer><span>A SMALL ENCOUNTER. ONE EVENT AT A TIME.</span><span id="mode-description">Scripted replay · Movement &amp; hits are predetermined</span></footer>
     </main>
   </div>`;
 
@@ -79,13 +96,27 @@ function element<T extends HTMLElement = HTMLElement>(id: string): T {
 }
 function text(id: string, value: string) { element(id).textContent = value; }
 function render() {
-  const frame = replay.frames[cursor - 1];
-  const state = frame?.state ?? replay.initialState;
+  const inPractice = mode === 'practice';
+  const frames = inPractice ? practice.frames : replay.frames;
+  const visibleCount = inPractice ? frames.length : cursor;
+  const frame = frames[visibleCount - 1];
+  const state = inPractice ? practice.state : cursor === replay.frames.length && (cursor > 0 || mode === 'recording')
+    ? replay.finalState : frame?.state ?? replay.initialState;
   const seconds = (state.timeMs / 1000).toFixed(3);
   const complete = cursor === replay.frames.length;
-  text('step-count', `${String(cursor).padStart(2, '0')} / ${replay.frames.length} EVENTS`);
+  text('step-count', inPractice ? `${frames.length} ${frames.length === 1 ? 'EVENT' : 'EVENTS'} RECORDED` : `${String(cursor).padStart(2, '0')} / ${replay.frames.length} EVENTS`);
+  text('mode-tag', inPractice ? 'CHOOSE YOUR TIMING' : mode === 'recording' ? 'YOUR RUN / REPLAY' : 'STEP-BY-STEP REPLAY');
+  element('training-mode').setAttribute('aria-pressed', String(mode === 'training'));
+  element('practice-mode').setAttribute('aria-pressed', String(mode !== 'training'));
+  element('practice-controls').hidden = !inPractice;
+  element('replay-transport').hidden = inPractice;
+  element('replay-hint').hidden = inPractice;
+  element('resume-practice').hidden = mode !== 'recording';
+  text('mode-description', inPractice ? 'Practice sandbox · Your actions are recorded in memory' : mode === 'recording'
+    ? 'Your recorded decisions · Playback does not change your practice run' : 'Scripted replay · Movement & hits are predetermined');
   text('player-hp', `${state.playerHp} / 100`);
   text('boss-hp', `${state.bossHp} / 500`);
+  text('loadout-label', `${state.mainWeapon === 'laser' ? 'LASER' : 'WIDE SHOT'}${state.vx5Equipped ? ' + VX-5 ROCKETS' : ''}`);
   element<HTMLProgressElement>('player-health').value = state.playerHp;
   element<HTMLProgressElement>('boss-health').value = state.bossHp;
   text('time', `${seconds}s`);
@@ -103,26 +134,31 @@ function render() {
   element('effect-light').classList.toggle('active', remainingMs > 0);
   text('corrosion-description', remainingMs > 0 ? 'VX-5 rocket damage doubled: 35 → 70' : 'Inactive · VX-5 rockets deal 35 damage');
   text('corrosion-time', remainingMs > 0 ? `${(remainingMs / 1000).toFixed(3)}s left` : 'INACTIVE');
-  const info = frame ? describe(frame.event) : {
+  const info = mode === 'recording' && frames.length === 0 ? { title: 'No combat events recorded', kind: 'time',
+    detail: 'This run only advanced time. The clock shows the final timestamp; return to practice to make a decision.' }
+    : inPractice && practiceFeedback ? { title: practiceFeedback, kind: 'time',
+    detail: 'No combat event occurred during this time advance. The clock and effect timers still advance.' }
+    : frame ? describe(frame.event) : {
     title: 'Ready when you are.', kind: 'start',
-    detail: 'Start with 100 player HP and 500 boss HP. Step through this short encounter to see how dodging and Shield Corrosion work.',
+    detail: inPractice ? 'Choose a timestamp, then move, apply corrosion, or register a landed hit. Advance time to see boss warnings and impacts. Your decisions will be recorded.'
+      : 'Start with 100 player HP and 500 boss HP. Step through this short encounter to see how dodging and Shield Corrosion work.',
   };
   text('event-category', frame ? info.kind.toUpperCase() : 'BEFORE THE FIRST SHOT');
   text('event-title', info.title);
   text('event-detail', info.detail);
-  text('event-time', frame ? `${seconds}s` : 'STANDBY');
+  text('event-time', inPractice && practiceFeedback ? `${seconds}s` : frame ? `${(frame.event.atMs / 1000).toFixed(3)}s` : 'STANDBY');
   element('current-event').dataset.kind = info.kind;
   const log = element<HTMLOListElement>('combat-log');
   log.replaceChildren();
-  if (cursor === 0) {
+  if (visibleCount === 0) {
     const empty = document.createElement('li');
     empty.className = 'empty-log';
-    empty.textContent = 'The combat log will appear here. Select Next event to begin.';
+    empty.textContent = inPractice ? 'Choose your first action to start recording.' : 'The combat log will appear here. Select Next event to begin.';
     log.append(empty);
   }
-  replay.frames.slice(0, cursor).forEach((entry, index) => {
+  frames.slice(0, visibleCount).forEach((entry, index) => {
     const item = document.createElement('li');
-    item.className = index === cursor - 1 ? 'log-item selected' : 'log-item';
+    item.className = index === visibleCount - 1 ? 'log-item selected' : 'log-item';
     const time = document.createElement('time');
     time.textContent = `${(entry.event.atMs / 1000).toFixed(3)}s`;
     const message = document.createElement('span');
@@ -137,8 +173,76 @@ function render() {
   next.disabled = complete;
   next.innerHTML = complete ? 'Replay complete <span>✓</span>' : 'Next event <span>→</span>';
   element('hit-flash').className = `hit-flash ${frame?.event.type === 'damage' ? 'visible' : ''}`;
+  if (inPractice) {
+    const finished = state.result !== 'ongoing';
+    const started = practice.actions.length > 0;
+    element<HTMLSelectElement>('main-weapon').disabled = started;
+    element<HTMLInputElement>('rockets-equipped').disabled = started;
+    element<HTMLInputElement>('action-time').value = seconds;
+    element<HTMLInputElement>('action-time').min = seconds;
+    document.querySelectorAll<HTMLButtonElement>('#practice-controls .action-button').forEach((button) => { button.disabled = finished; });
+    element<HTMLButtonElement>('rocket-hit').disabled = finished || !state.vx5Equipped;
+    element<HTMLButtonElement>('apply-corrosion').disabled = finished;
+    element<HTMLButtonElement>('replay-run').disabled = practice.actions.length === 0;
+    text('main-hit', `${state.mainWeapon === 'laser' ? 'Laser' : 'Wide Shot'} hit`);
+    document.querySelectorAll<HTMLButtonElement>('[data-move]').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.move === state.playerLane));
+    });
+  }
 }
 element('next').addEventListener('click', () => { if (cursor < replay.frames.length) cursor += 1; render(); });
 element('previous').addEventListener('click', () => { cursor = Math.max(0, cursor - 1); render(); });
 element('restart').addEventListener('click', () => { cursor = 0; render(); });
+element('training-mode').addEventListener('click', () => {
+  mode = 'training'; replay = replayBattle(createTrainingBattle(), TRAINING_ACTIONS); cursor = 0; render();
+});
+element('practice-mode').addEventListener('click', () => { mode = 'practice'; render(); });
+element('resume-practice').addEventListener('click', () => { mode = 'practice'; render(); });
+function newPractice() {
+  practice = createPractice({
+    mainWeapon: element<HTMLSelectElement>('main-weapon').value as MainWeapon,
+    vx5Equipped: element<HTMLInputElement>('rockets-equipped').checked,
+  });
+  practiceFeedback = null;
+  text('practice-error', '');
+  render();
+}
+element('new-practice').addEventListener('click', newPractice);
+element('main-weapon').addEventListener('change', newPractice);
+element('rockets-equipped').addEventListener('change', newPractice);
+function actionTime() {
+  const value = element<HTMLInputElement>('action-time').value;
+  const ms = Number(value) * 1000;
+  if (value.trim() === '' || !Number.isFinite(ms) || Math.abs(ms - Math.round(ms)) > 0.000001) {
+    throw new Error('Enter seconds with at most three decimal places');
+  }
+  return Math.round(ms);
+}
+function submitDecision(build: (atMs: number) => PlayerAction) {
+  try {
+    const before = practice.frames.length;
+    practice = actInPractice(practice, build(actionTime()));
+    practiceFeedback = practice.frames.length === before ? `Time advanced to ${(practice.state.timeMs / 1000).toFixed(3)}s` : null;
+    text('practice-error', '');
+    render();
+  } catch (error) { text('practice-error', error instanceof Error ? error.message : 'That action could not be resolved'); }
+}
+element('main-hit').addEventListener('click', () => submitDecision((atMs) => ({ type: 'hit', atMs, weapon: practice.state.mainWeapon })));
+element('rocket-hit').addEventListener('click', () => submitDecision((atMs) => ({ type: 'hit', atMs, weapon: 'vx-5' })));
+element('apply-corrosion').addEventListener('click', () => submitDecision((atMs) => ({ type: 'apply-shield-corrosion', atMs })));
+element('wait').addEventListener('click', () => submitDecision((atMs) => ({ type: 'advance-time', atMs })));
+element('add-quarter').addEventListener('click', () => {
+  element<HTMLInputElement>('action-time').value = ((practice.state.timeMs + 250) / 1000).toFixed(3);
+  submitDecision((atMs) => ({ type: 'advance-time', atMs }));
+});
+element('add-second').addEventListener('click', () => {
+  element<HTMLInputElement>('action-time').value = ((practice.state.timeMs + 1000) / 1000).toFixed(3);
+  submitDecision((atMs) => ({ type: 'advance-time', atMs }));
+});
+document.querySelectorAll<HTMLButtonElement>('[data-move]').forEach((button) => {
+  button.addEventListener('click', () => submitDecision((atMs) => ({ type: 'move', atMs, lane: button.dataset.move as Lane })));
+});
+element('replay-run').addEventListener('click', () => {
+  replay = replayBattle(practice.initialState, practice.actions); cursor = 0; mode = 'recording'; render();
+});
 render();

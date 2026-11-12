@@ -65,6 +65,17 @@ Resolution also returns `frames`: each frame pairs an emitted event with a new s
 
 The same starting state and ordered timestamped actions must produce identical states and events under the same rules version. A future saved replay will record the scenario, rules version, loadout, starting state, and actions. No randomness is used yet; future randomness must have an explicit seed.
 
+## Practice sandbox
+
+- Practice uses the existing training encounter's two boss shots: middle lane warned at 1,500 ms and hit at 2,500 ms; top lane warned at 3,000 ms and hit at 4,000 ms. No further shots are scheduled yet.
+- Choose Wide Shot or Laser, and whether VX-5 rockets are equipped, before the first action. Equipment is fixed for that run.
+- The player chooses a timestamp and a move, corrosion application, confirmed weapon hit, or time advance. Boss warnings due by that timestamp are submitted first in chronological order. The engine resolves pending impacts and expiration using the existing rules.
+- Actions are instantaneous and have no resource cost or firing interval in this sandbox. Multiple hits at one time are allowed; this is a timing experiment rather than a balanced real-time fight.
+- The +0.25s and +1s buttons advance from the current battle time. Editing the time field alone does not advance anything. Any other action uses the time entered in that field.
+- Reapplication while corrosion is active is still unsupported; a rejected decision leaves the session unchanged.
+- Both boss actions and player decisions are recorded in order in memory. Replay starts from that run's original equipment and HP and reproduces its events. Watching a replay does not alter the practice session; the player can return and continue it.
+- Time-only decisions can advance the final state without adding combat events. A replay with no combat events shows the final clock value. Runs are not saved across browser reloads, and New practice clears the current run.
+
 ## Previous learning example
 
 The turn-based Storm Ward and Ember Mark rules and their regression tests are preserved in commit `9517d49`. The shooter expiration-boundary regression now carries forward the same lesson: expire an effect before resolving damage at its expiration time.

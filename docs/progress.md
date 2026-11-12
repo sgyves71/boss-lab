@@ -39,9 +39,18 @@ The original turn-based example is preserved in Git history. Shield Corrosion re
 - The screen includes HP, three lanes, boss warnings, remaining corrosion time, explanations, ordered log, Next event, Previous event, and Restart controls.
 - Verification: strict core/browser type-checking, 19 engine/replay tests, production build, and three Playwright browser checks pass. Desktop and narrow-screen screenshots were visually inspected. Playback remains scripted; ship control is a later milestone.
 
+## Player-controlled practice
+
+- Practice offers a main-weapon selection, optional VX-5 equipment, explicit action timestamps, lane changes, confirmed hits, and Shield Corrosion application.
+- The boss keeps the two training attacks, preserving known warning and impact times while the player changes decisions.
+- `src/practice.ts` merges due boss warnings and player actions on the shared clock and records the exact inputs. Invalid decisions leave the session unchanged.
+- Replay my run reproduces the session from its original starting state. Return to practice preserves the run; New practice resets it. Runs are stored only in memory.
+- The sandbox deliberately has no firing rate, resource costs, or continuous motion yet.
+- Verification: strict TypeScript checking, all 23 engine/replay/practice tests, six Playwright browser checks, and the production build pass. Browser checks cover equipment selection, timing decisions, recorded replay, resume/reset, invalid times, victory controls, time-only recording, and mobile layout. Desktop and mobile practice screenshots were inspected.
+
 ## Next milestones
 
 1. Review the HP and dodge sequence, then choose further boss mechanics: vulnerability windows and meaningful choices about Shield Corrosion timing.
 2. Replay runner and step-by-step view are complete; review the encounter in the browser before adding mechanics.
-3. Build a small playable encounter, then add movement, collisions, and homing simulation in manageable steps.
+3. Practice choices and recording are implemented. Next, decide firing cadence and action costs, then add continuous movement, collisions, and homing in manageable steps.
 4. Add replay persistence, browser journey coverage, and GitHub Actions when those layers exist. Keep one Cypress replay scenario for the migration comparison.

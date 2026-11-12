@@ -6,7 +6,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test src/combat.test.ts src/replay.test.ts",
+    "test": "node --test src/combat.test.ts src/replay.test.ts src/practice.test.ts",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",

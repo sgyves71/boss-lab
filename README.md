@@ -33,6 +33,14 @@ The browser and terminal demo share `src/scenario.ts`. `src/replay.ts` runs the 
 
 `npm run build` creates the browser app in `dist/`; `npm run preview` serves that build locally. The UI uses Vite and plain TypeScript, without a UI framework. Google Fonts are optional; local fallback fonts keep the app usable offline.
 
+## Try your own decisions
+
+Select **Practice** above the arena. Choose Wide Shot or Laser and optional VX-5 rockets before your first action. Enter an **Action time (seconds)**, then select a lane move, a confirmed weapon hit, Shield Corrosion, or **Advance to time**. The +0.25s and +1s buttons advance from the current clock. Typing alone does not change battle time.
+
+Try applying Shield Corrosion at `1.000`, moving to the top lane at `2.000`, then landing rockets at `3.999` and `4.000`. The first boss shot misses; the second hits if you stay in the top lane. You can also move to the bottom lane before 4 seconds to dodge both.
+
+Select **Replay my run** to inspect the recorded events. **Return to practice** resumes the same session; **New practice** starts fresh. Runs are held in memory and disappear on reload. This sandbox has two scheduled boss shots and no firing rate or action costs yet; it registers hits directly rather than simulating projectile flight.
+
 ## Browser checks
 
 Install the test browser once:
@@ -42,4 +50,4 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts and stops a local server on port 4173. Tests cover the full replay, event ordering at expiration, back/restart, keyboard operation, and a narrow-screen layout. Screenshots are written to the ignored `test-results/` folder. Run `npm run check`, `npm run build`, and `npm run test:e2e` before committing changes to the replay screen.
+Playwright starts and stops a local server on port 4173. Tests cover the training replay, event ordering at expiration, back/restart, keyboard operation, practice decisions, replay/resume, equipment, victory controls, and narrow-screen layouts. Screenshots are written to the ignored `test-results/` folder. Run `npm run check`, `npm run build`, and `npm run test:e2e` before committing changes to the screen.
