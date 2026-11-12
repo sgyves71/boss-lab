@@ -1,29 +1,38 @@
 # Boss Lab progress
 
-## Day 1 · Review the combat spec
+## Completed foundation
 
-The first milestone is a playable, reproducible fight against Veyra the Storm Dragon. The README, combat rules, and Claude Code instructions are drafted. The engine and test suite are still to come.
+- Initial combat documentation committed as `28b344d`.
+- Turn-based Veyra resolver, six engine tests, strict TypeScript checking, and VS Code setup committed as `9517d49`.
+- Verified the original ordering regression by temporarily reversing Ward expiration and Ember Mark damage, observing the failure, then restoring the correct sequence.
 
-Use Codex in VS Code for hands-on work and ChatGPT for milestone check-ins. Bring in Claude Code later.
+## Current milestone: timed shooter damage
 
-### Next session in VS Code
+The learning example now follows the user's horizontal shooter concept:
 
-1. Open the Boss Lab folder and review the changes in Source Control.
-2. Read the [combat rules](combat-rules.md) and work through the first two turns by hand. Play Ember Mark on turn 1 and Guard on turn 2. Verify that Storm Ward expires before the Ember Mark tick. The player should finish turn 2 at 15 HP and Veyra at 16 HP.
-3. In the VS Code Codex chat, ask Codex to read the combat rules, walk through the two turns independently, and flag any rule that could produce two different implementations. Compare its answer with yours and resolve any ambiguity in the spec.
-4. Review the final diff and make the first commit. When GitHub is connected, push the commit.
+- One equipped main weapon: Wide Shot (8 damage per hit) or Laser (14).
+- Optional VX-5 homing side rockets: 35 damage per hit, doubled to 70 while the boss Shield Corrosion is active.
+- Explicit shared simulation time in milliseconds; Shield Corrosion start and duration are stored in state.
+- Three-second duration with an exclusive expiration boundary. Applied at 1,000 ms, the Shield Corrosion boosts a rocket at 3,999 ms but not one at 4,000 ms.
+- Pure `resolveEvent(state, action)` returns a new state and chronological events. Hits represent confirmed landed projectiles.
+- `npm run demo` prints a readable example without real-time waits.
+- `npm run check` runs strict type-checking and the shooter engine tests.
 
-## Upcoming milestones
+Verification: the initial 11 shooter tests passed. Temporarily changing expiration from `>=` to `>` made the boundary regression fail with 360 boss HP instead of 395, proving the rocket incorrectly received doubled damage at expiration. The correct comparison was restored.
 
-### First engine test status
+The original turn-based example is preserved in Git history. Shield Corrosion refresh/stacking rules remain undecided; active reapplication is explicitly unsupported for now.
 
-- The initial documentation commit is complete (`28b344d`).
-- `src/combat.ts` defines the typed, UI-independent turn contract and first resolver. Each call runs start-of-turn effects, the move, and the attack, then advances if the fight continues.
-- `npm test` runs the engine tests with Node.js 24 or newer. The original placeholder failed because the resolver was unimplemented; the implemented resolver passes.
-- Temporarily resolving Ember Mark before Storm Ward expiration makes the two-turn regression fail: Veyra has 18 HP instead of 16. The correct order was restored and the regression passed again.
-- Additional engine tests cover blocked ticks, reapplication, Strike, Guard duration, HP clamping, and immediate fight completion.
-- Strict TypeScript checking is configured via `npm run typecheck`; `npm run check` runs it followed by all six engine tests. VS Code tasks, a test debugger configuration, and workspace TypeScript settings are included.
+## HP and lane-dodge simulation
 
-- **First engine test.** Implemented and verified, including the reversed-effect regression check described above.
-- **Playable fight and replay.** Build the browser fight and replay flow. Add Playwright coverage and run the checks in GitHub Actions. Keep one Cypress replay spec for comparison.
-- **Stormbreak.** After the first fight is playable and replayable, add Veyra's below-half-health phase. Honor her current telegraph and use the new attack pattern on the following turn.
+- User selected provisional defaults: player 100 HP, boss 500 HP, boss projectile damage 10. `createBattle()` makes these configurable.
+- User selected three vertical lanes. Boss attacks warn of a lane and future impact time; moving out before impact avoids damage. Movement exactly at impact is too late.
+- Scheduled impact and corrosion expiration resolve chronologically, even when the caller jumps forward in time. Defeat stops the timeline immediately.
+- One boss projectile may be pending at a time. Continuous movement, attack generation, and actual homing remain future work.
+- `npm run check` passes strict type-checking and all 17 tests. The expanded terminal demo shows both a dodge and taking damage.
+
+## Next milestones
+
+1. Review the HP and dodge sequence, then choose further boss mechanics: vulnerability windows and meaningful choices about Shield Corrosion timing.
+2. Build a replay runner with a step-by-step view of state and events.
+3. Build a small playable encounter, then add movement, collisions, and homing simulation in manageable steps.
+4. Add replay persistence, browser journey coverage, and GitHub Actions when those layers exist. Keep one Cypress replay scenario for the migration comparison.

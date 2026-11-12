@@ -1,103 +1,150 @@
-export type Move = 'strike' | 'guard' | 'ember-mark';
+export const MAIN_WEAPONS = {
+  'wide-shot': { damagePerHit: 8 },
+  laser: { damagePerHit: 14 },
+} as const;
+
+export type MainWeapon = keyof typeof MAIN_WEAPONS;
+export type Weapon = MainWeapon | 'vx-5';
+export const VX5_DAMAGE_PER_HIT = 35;
+export const SHIELD_CORROSION_DURATION_MS = 3000;
+export type ShieldCorrosion = Readonly<{ startedAtMs: number; durationMs: number }>;
+export type Lane = 'top' | 'middle' | 'bottom';
+export type BossShot = Readonly<{ lane: Lane; impactAtMs: number; damage: number }>;
 
 export type BattleState = Readonly<{
-  /** The turn to resolve on the next call. */
-  turn: number;
+  timeMs: number;
+  bossHp: number;
   playerHp: number;
-  veyraHp: number;
-  /** null means Storm Ward is no longer active. */
-  stormWardExpiresOnTurn: number | null;
-  emberMarkTicksRemaining: number;
-  telegraphedAttackDamage: number;
-  result: 'ongoing' | 'player-won' | 'veyra-won';
+  playerLane: Lane;
+  bossShotDamage: number;
+  pendingBossShot: BossShot | null;
+  mainWeapon: MainWeapon;
+  vx5Equipped: boolean;
+  shieldCorrosion: ShieldCorrosion | null;
+  result: 'ongoing' | 'boss-defeated' | 'player-defeated';
 }>;
+
+export function createBattle(options: Partial<Pick<BattleState,
+  'playerHp' | 'bossHp' | 'bossShotDamage' | 'mainWeapon' | 'vx5Equipped'
+>> = {}): BattleState {
+  const state: BattleState = {
+    timeMs: 0, playerHp: 100, bossHp: 500, bossShotDamage: 10,
+    playerLane: 'middle', pendingBossShot: null,
+    mainWeapon: 'wide-shot', vx5Equipped: true,
+    shieldCorrosion: null, result: 'ongoing', ...options,
+  };
+  for (const value of [state.playerHp, state.bossHp, state.bossShotDamage]) {
+    if (!Number.isSafeInteger(value) || value <= 0) {
+      throw new Error('Starting HP and boss shot damage must be positive integers');
+    }
+  }
+  return state;
+}
+
+/** A hit means one projectile has already landed; flight is outside this model. */
+export type BattleAction =
+  | Readonly<{ type: 'apply-shield-corrosion'; atMs: number }>
+  | Readonly<{ type: 'hit'; atMs: number; weapon: Weapon }>
+  | Readonly<{ type: 'move'; atMs: number; lane: Lane }>
+  | Readonly<{ type: 'boss-fire'; atMs: number; lane: Lane; impactAtMs: number }>
+  | Readonly<{ type: 'advance-time'; atMs: number }>;
 
 export type CombatEvent =
-  | Readonly<{ type: 'storm-ward-expired'; turn: number }>
-  | Readonly<{
-      type: 'damage' | 'damage-blocked';
-      turn: number;
-      source: 'strike' | 'ember-mark' | 'veyra-attack';
-      target: 'player' | 'veyra';
-      amount: number;
-    }>
-  | Readonly<{
-      type: 'fight-ended';
-      turn: number;
-      result: 'player-won' | 'veyra-won';
-    }>;
+  | Readonly<{ type: 'shield-corrosion-applied'; atMs: number; durationMs: number }>
+  | Readonly<{ type: 'shield-corrosion-expired'; atMs: number }>
+  | Readonly<{ type: 'damage'; atMs: number; weapon: Weapon; amount: number }>
+  | Readonly<{ type: 'player-moved'; atMs: number; lane: Lane }>
+  | Readonly<{ type: 'boss-shot-fired'; atMs: number; lane: Lane; impactAtMs: number }>
+  | Readonly<{ type: 'boss-shot-dodged'; atMs: number; lane: Lane }>
+  | Readonly<{ type: 'player-damaged'; atMs: number; amount: number }>
+  | Readonly<{ type: 'player-defeated'; atMs: number }>
+  | Readonly<{ type: 'boss-defeated'; atMs: number }>;
 
-export type TurnResolution = Readonly<{
-  state: BattleState;
-  events: readonly CombatEvent[];
-}>;
+export type Resolution = Readonly<{ state: BattleState; events: readonly CombatEvent[] }>;
 
-/** Resolve one complete turn without mutating the input; events are chronological. */
-export function resolveTurn(state: BattleState, move: Move): TurnResolution {
-  if (state.result !== 'ongoing') {
-    throw new Error('A finished fight accepts no further moves');
+/** Advance the shared battle timeline without reading a clock or mutating input. */
+export function resolveEvent(state: BattleState, action: BattleAction): Resolution {
+  if (state.result !== 'ongoing') throw new Error('The battle has already finished');
+  if (!Number.isSafeInteger(action.atMs) || action.atMs < 0 || action.atMs < state.timeMs) {
+    throw new Error('Time must be a nonnegative integer in milliseconds and cannot move backwards');
+  }
+  if (action.type === 'hit') {
+    const equipped = action.weapon === 'vx-5'
+      ? state.vx5Equipped : action.weapon === state.mainWeapon;
+    if (!equipped) throw new Error('The hit weapon is not equipped');
+  }
+  if (action.type === 'boss-fire'
+    && (!Number.isSafeInteger(action.impactAtMs) || action.impactAtMs <= action.atMs)) {
+    throw new Error('Boss shot impact must be an integer timestamp after firing');
   }
 
-  const next = { ...state };
+  const next = { ...state, timeMs: action.atMs };
   const events: CombatEvent[] = [];
 
-  function damage(
-    source: 'strike' | 'ember-mark' | 'veyra-attack',
-    target: 'player' | 'veyra',
-    amount: number,
-  ): void {
-    if (target === 'veyra' && next.stormWardExpiresOnTurn !== null) {
-      events.push({ type: 'damage-blocked', turn: state.turn, source, target, amount });
-      return;
-    }
-
-    if (target === 'player') {
-      next.playerHp = Math.max(0, next.playerHp - amount);
+  // Process scheduled effects chronologically before the submitted action.
+  while (true) {
+    const expiresAtMs = next.shieldCorrosion === null ? Infinity
+      : next.shieldCorrosion.startedAtMs + next.shieldCorrosion.durationMs;
+    const impactAtMs = next.pendingBossShot?.impactAtMs ?? Infinity;
+    const dueAtMs = Math.min(expiresAtMs, impactAtMs);
+    if (dueAtMs > action.atMs) break;
+    if (expiresAtMs <= impactAtMs) {
+      next.shieldCorrosion = null;
+      events.push({ type: 'shield-corrosion-expired', atMs: expiresAtMs });
     } else {
-      next.veyraHp = Math.max(0, next.veyraHp - amount);
-    }
-    events.push({ type: 'damage', turn: state.turn, source, target, amount });
-
-    if (next.playerHp === 0 || next.veyraHp === 0) {
-      const result = next.veyraHp === 0 ? 'player-won' : 'veyra-won';
-      next.result = result;
-      events.push({ type: 'fight-ended', turn: state.turn, result });
-    }
-  }
-
-  function expireStormWard(): void {
-    if (next.stormWardExpiresOnTurn === state.turn) {
-      next.stormWardExpiresOnTurn = null;
-      events.push({ type: 'storm-ward-expired', turn: state.turn });
-    }
-  }
-
-  function tickEmberMark(): void {
-    if (next.emberMarkTicksRemaining > 0) {
-      next.emberMarkTicksRemaining -= 1;
-      damage('ember-mark', 'veyra', 2);
+      const shot = next.pendingBossShot!;
+      next.pendingBossShot = null;
+      if (shot.lane !== next.playerLane) {
+        events.push({ type: 'boss-shot-dodged', atMs: impactAtMs, lane: shot.lane });
+      } else {
+        next.playerHp = Math.max(0, next.playerHp - shot.damage);
+        events.push({ type: 'player-damaged', atMs: impactAtMs, amount: shot.damage });
+        if (next.playerHp === 0) {
+          next.result = 'player-defeated';
+          next.timeMs = impactAtMs;
+          events.push({ type: 'player-defeated', atMs: impactAtMs });
+          return { state: next, events };
+        }
+      }
     }
   }
 
-  expireStormWard();
-  tickEmberMark();
-  if (next.result !== 'ongoing') return { state: next, events };
-
-  switch (move) {
-    case 'strike':
-      damage('strike', 'veyra', 5);
+  switch (action.type) {
+    case 'move':
+      next.playerLane = action.lane;
+      events.push({ type: 'player-moved', atMs: action.atMs, lane: action.lane });
       break;
-    case 'ember-mark':
-      next.emberMarkTicksRemaining = 2;
+    case 'boss-fire':
+      if (next.pendingBossShot !== null) {
+        throw new Error('Only one boss shot can be in flight in this prototype');
+      }
+      next.pendingBossShot = {
+        lane: action.lane, impactAtMs: action.impactAtMs, damage: next.bossShotDamage,
+      };
+      events.push({ type: 'boss-shot-fired', atMs: action.atMs,
+        lane: action.lane, impactAtMs: action.impactAtMs });
       break;
-    case 'guard':
+    case 'apply-shield-corrosion':
+      if (next.shieldCorrosion !== null) {
+        throw new Error('Shield Corrosion refresh and stacking are not supported in this prototype');
+      }
+      next.shieldCorrosion = { startedAtMs: action.atMs, durationMs: SHIELD_CORROSION_DURATION_MS };
+      events.push({ type: 'shield-corrosion-applied', atMs: action.atMs, durationMs: SHIELD_CORROSION_DURATION_MS });
+      break;
+    case 'hit': {
+      const amount = action.weapon === 'vx-5'
+        ? VX5_DAMAGE_PER_HIT * (next.shieldCorrosion === null ? 1 : 2)
+        : MAIN_WEAPONS[action.weapon].damagePerHit;
+      next.bossHp = Math.max(0, next.bossHp - amount);
+      events.push({ type: 'damage', atMs: action.atMs, weapon: action.weapon, amount });
+      if (next.bossHp === 0) {
+        next.result = 'boss-defeated';
+        events.push({ type: 'boss-defeated', atMs: action.atMs });
+      }
+      break;
+    }
+    case 'advance-time':
       break;
   }
-  if (next.result !== 'ongoing') return { state: next, events };
-
-  const attackDamage = Math.max(0, next.telegraphedAttackDamage - (move === 'guard' ? 3 : 0));
-  damage('veyra-attack', 'player', attackDamage);
-  if (next.result === 'ongoing') next.turn += 1;
-
   return { state: next, events };
 }
