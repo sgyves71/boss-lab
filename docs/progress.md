@@ -1,56 +1,37 @@
 # Boss Lab progress
 
-## Completed foundation
+## Current status: complete interview demo
 
-- Initial combat documentation committed as `28b344d`.
-- Turn-based Veyra resolver, six engine tests, strict TypeScript checking, and VS Code setup committed as `9517d49`.
-- Verified the original ordering regression by temporarily reversing Ward expiration and Ember Mark damage, observing the failure, then restoring the correct sequence.
+The local demo now has a clear reviewer journey: a short timing lesson, a complete victory, player-controlled practice, and versioned saved replays. The engineering focus is deterministic simulation and explaining outcomes, rather than building a full arcade engine.
 
-## Current milestone: timed shooter damage
+- Starting values: player 100 HP, boss 500 HP, boss projectile damage 10.
+- User-approved practice cadence: Wide Shot 8 damage every 250 ms, Laser 14 every 500 ms, VX-5 35 every 1,000 ms.
+- Shield Corrosion lasts 3 seconds and doubles VX-5 damage to 70 at impact. Expiration uses an exclusive end boundary.
+- User-approved boss pattern repeats every 5 seconds: middle warning at +1.5s / impact +2.5s, top warning at +3s / impact +4s. Bottom remains a safe teaching lane.
+- Complete fight is a legal practice victory at 7.5 seconds, player HP 100 and boss HP 0. A portable input fixture is included at `examples/victory.json`.
+- Practice records decisions and generated actions. Event snapshots support forward/back playback without duplicating rules in the UI.
+- Save/load uses one browser-local slot; JSON export/import allows sharing. Rules version and input validation prevent incompatible or impossible runs from replacing the active session.
+- README includes a short tour, run/check commands, limits, and source links. `docs/architecture.md` explains boundaries, persistence, tradeoffs, and an interview walkthrough.
+- GitHub Actions is configured for types, Node tests, build, and Playwright on pushes and pull requests. No remote is configured yet; hosted execution has not been verified.
 
-The learning example now follows the user's horizontal shooter concept:
+## Verification
 
-- One equipped main weapon: Wide Shot (8 damage per hit) or Laser (14).
-- Optional VX-5 homing side rockets: 35 damage per hit, doubled to 70 while the boss Shield Corrosion is active.
-- Explicit shared simulation time in milliseconds; Shield Corrosion start and duration are stored in state.
-- Three-second duration with an exclusive expiration boundary. Applied at 1,000 ms, the Shield Corrosion boosts a rocket at 3,999 ms but not one at 4,000 ms.
-- Pure `resolveEvent(state, action)` returns a new state and chronological events. Hits represent confirmed landed projectiles.
-- `npm run demo` prints a readable example without real-time waits.
-- `npm run check` runs strict type-checking and the shooter engine tests.
+- `npm run verify` is the full local check command: strict core/browser types, 30 Node tests, production build, and 10 Playwright journeys.
+- Coverage includes expiration ordering, independent cadence boundaries, repeated attacks, victory and defeat, exact replay reproduction, save/load reconstruction, invalid files, unavailable storage, reload, import/export, and narrow-screen layout.
+- Desktop and mobile layouts are visually inspected from browser-test screenshots.
+- The expiration regression was verified by temporarily changing `>=` to `>`, observing the incorrect doubled hit at expiration, and restoring the correct comparison.
 
-Verification: the initial 11 shooter tests passed. Temporarily changing expiration from `>=` to `>` made the boundary regression fail with 360 boss HP instead of 395, proving the rocket incorrectly received doubled damage at expiration. The correct comparison was restored.
+## Milestone history
 
-The original turn-based example is preserved in Git history. Shield Corrosion refresh/stacking rules remain undecided; active reapplication is explicitly unsupported for now.
+- `28b344d`: initial documentation and two-turn Storm Ward / Ember Mark specification.
+- `9517d49`: first deterministic turn resolver, six tests, strict TypeScript checking, and VS Code setup.
+- `2ee2afd`: switch to timestamped shooter damage, named weapons, timed corrosion, and lane dodges.
+- `e0ac68d`: event-by-event browser replay and shared training scenario.
+- `49770d0`: player-controlled practice and recorded replay.
+- Current milestone: cadence, repeated boss pattern, complete example, saved runs, reviewer documentation, and CI configuration.
 
-## HP and lane-dodge simulation
+## Deliberately outside this demo
 
-- User selected provisional defaults: player 100 HP, boss 500 HP, boss projectile damage 10. `createBattle()` makes these configurable.
-- User selected three vertical lanes. Boss attacks warn of a lane and future impact time; moving out before impact avoids damage. Movement exactly at impact is too late.
-- Scheduled impact and corrosion expiration resolve chronologically, even when the caller jumps forward in time. Defeat stops the timeline immediately.
-- One boss projectile may be pending at a time. Continuous movement, attack generation, and actual homing remain future work.
-- `npm run check` passes strict type-checking and all 17 tests. The expanded terminal demo shows both a dodge and taking damage.
+Continuous movement, geometric collision detection, homing trajectories, ammunition, resource costs, advanced boss phases, corrosion refresh/stacking, backend accounts, and a replay library are not implemented. The original Cypress migration comparison remains a future comparison exercise; Playwright is the browser runner for this demo.
 
-## Interactive replay
-
-- Timed shooter damage and lane dodging committed as `2ee2afd`.
-- Browser replay runs locally with `npm run dev`, using Vite and plain TypeScript.
-- Shared training actions in `src/scenario.ts` drive both the terminal demo and browser replay.
-- The engine emits individual event frames, letting the viewer show corrosion expiration, incoming damage, and rocket damage separately at 4 seconds. The replay runner uses engine snapshots rather than duplicating rules in the UI.
-- The screen includes HP, three lanes, boss warnings, remaining corrosion time, explanations, ordered log, Next event, Previous event, and Restart controls.
-- Verification: strict core/browser type-checking, 19 engine/replay tests, production build, and three Playwright browser checks pass. Desktop and narrow-screen screenshots were visually inspected. Playback remains scripted; ship control is a later milestone.
-
-## Player-controlled practice
-
-- Practice offers a main-weapon selection, optional VX-5 equipment, explicit action timestamps, lane changes, confirmed hits, and Shield Corrosion application.
-- The boss keeps the two training attacks, preserving known warning and impact times while the player changes decisions.
-- `src/practice.ts` merges due boss warnings and player actions on the shared clock and records the exact inputs. Invalid decisions leave the session unchanged.
-- Replay my run reproduces the session from its original starting state. Return to practice preserves the run; New practice resets it. Runs are stored only in memory.
-- The sandbox deliberately has no firing rate, resource costs, or continuous motion yet.
-- Verification: strict TypeScript checking, all 23 engine/replay/practice tests, six Playwright browser checks, and the production build pass. Browser checks cover equipment selection, timing decisions, recorded replay, resume/reset, invalid times, victory controls, time-only recording, and mobile layout. Desktop and mobile practice screenshots were inspected.
-
-## Next milestones
-
-1. Review the HP and dodge sequence, then choose further boss mechanics: vulnerability windows and meaningful choices about Shield Corrosion timing.
-2. Replay runner and step-by-step view are complete; review the encounter in the browser before adding mechanics.
-3. Practice choices and recording are implemented. Next, decide firing cadence and action costs, then add continuous movement, collisions, and homing in manageable steps.
-4. Add replay persistence, browser journey coverage, and GitHub Actions when those layers exist. Keep one Cypress replay scenario for the migration comparison.
+The next review should assess the finished example and its explanation before choosing deeper shooter development. Publishing or connecting a GitHub remote can be a separate step.

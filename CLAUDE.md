@@ -18,3 +18,5 @@ Boss Lab is a TypeScript horizontal shooter boss-combat prototype designed aroun
 - `npm run dev` starts the local replay screen. Browser presentation lives in `web/`, with its own DOM-aware TypeScript configuration; the core engine remains independent of browser APIs.
 - Practice scheduling and action recording live in `src/practice.ts`; keep them independent of the UI and wall clock. Test recorded runs by replaying their actual inputs through the engine.
 - `npm run build` builds the browser app. `npm run test:e2e` runs the Playwright journeys (install Chromium first with `npx playwright install chromium`). Run both for UI changes.
+- `npm run verify` runs types, engine/persistence tests, production build, and Playwright. CI uses the same checks on Node 24. A local workflow file is not evidence of a hosted CI run.
+- Saves contain versioned configuration and player decisions, never trusted HP or event output. Validate and reconstruct saves before replacing an active run.

@@ -4,6 +4,9 @@ export const MAIN_WEAPONS = {
 } as const;
 
 export type MainWeapon = keyof typeof MAIN_WEAPONS;
+export function isMainWeapon(value: unknown): value is MainWeapon {
+  return typeof value === 'string' && Object.hasOwn(MAIN_WEAPONS, value);
+}
 export type Weapon = MainWeapon | 'vx-5';
 export const VX5_DAMAGE_PER_HIT = 35;
 export const SHIELD_CORROSION_DURATION_MS = 3000;

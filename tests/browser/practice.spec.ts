@@ -18,10 +18,10 @@ test('choose actions, dodge, hit the corrosion boundary, then replay and resume 
   await page.getByRole('button', { name: 'Laser hit', exact: true }).click();
   await expect(page.getByTestId('player-hp')).toHaveText('100 / 100');
   await expect(page.getByTestId('boss-hp')).toHaveText('486 / 500');
-  await time.fill('3.999');
+  await time.fill('3.000');
   await page.getByRole('button', { name: 'VX-5 hit', exact: true }).click();
   await expect(page.getByTestId('boss-hp')).toHaveText('416 / 500');
-  await expect(page.getByTestId('corrosion-time')).toHaveText('0.001s left');
+  await expect(page.getByTestId('corrosion-time')).toHaveText('1.000s left');
   await time.fill('4.000');
   await page.getByRole('button', { name: 'VX-5 hit', exact: true }).click();
   await expect(page.getByTestId('boss-hp')).toHaveText('381 / 500');
@@ -64,7 +64,11 @@ test('equipment restrictions, defeat controls, and a time-only recording work', 
   await page.getByRole('button', { name: 'New practice', exact: true }).click();
   await page.getByLabel('Equip VX-5 rockets').check();
   await page.getByRole('button', { name: 'Apply Shield Corrosion', exact: true }).click();
-  for (let hit = 0; hit < 8; hit += 1) await page.getByRole('button', { name: 'VX-5 hit', exact: true }).click();
+  for (let hit = 0; hit < 8; hit += 1) {
+    await page.getByLabel('Action time (seconds)').fill(String(hit));
+    if (hit > 0 && hit % 3 === 0) await page.getByRole('button', { name: 'Apply Shield Corrosion', exact: true }).click();
+    await page.getByRole('button', { name: 'VX-5 hit', exact: true }).click();
+  }
   await expect(page.getByTestId('boss-hp')).toHaveText('0 / 500');
   await expect(page.locator('#event-title')).toHaveText('Boss defeated');
   await expect(page.getByRole('button', { name: 'VX-5 hit', exact: true })).toBeDisabled();

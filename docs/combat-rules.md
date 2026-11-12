@@ -2,7 +2,7 @@
 
 ## Scope
 
-A horizontal shooter boss encounter modeled as timestamped combat events, with a simple three-lane dodge simulation. Continuous movement, firing rate, geometric collision detection, homing trajectories, and weapon switching are future work. A player weapon hit input means one projectile actually landed; homing does not guarantee a hit.
+A horizontal shooter boss encounter modeled as timestamped combat events, with a three-lane dodge simulation and practice firing cadence. Continuous movement, geometric collision detection, homing trajectories, and weapon switching are future work. A player weapon hit input means one projectile actually landed; homing does not guarantee a hit.
 
 ## Starting state and boss attacks
 
@@ -24,7 +24,7 @@ The player equips one main weapon and may also equip VX-5 side rockets.
 | Laser | 14 | 14 |
 | VX-5 homing rocket | 35 | 70 |
 
-Each landed projectile is a separate hit, including multiple hits at the same timestamp. Only equipped weapons can register hits. Main weapon definitions live in `MAIN_WEAPONS` so more can be added without changing the resolution sequence.
+Each landed projectile is a separate hit. Only equipped weapons can register hits. Main weapon definitions live in `MAIN_WEAPONS` so more can be added without changing the resolution sequence. The core resolver can process multiple hits at the same timestamp; practice adds independent weapon cadence as described below.
 
 ## Shared simulation timeline
 
@@ -63,18 +63,21 @@ Resolution also returns `frames`: each frame pairs an emitted event with a new s
 
 ## Replay contract
 
-The same starting state and ordered timestamped actions must produce identical states and events under the same rules version. A future saved replay will record the scenario, rules version, loadout, starting state, and actions. No randomness is used yet; future randomness must have an explicit seed.
+The same starting state and ordered timestamped actions must produce identical states and events under the same rules version. Saved practice runs record format version 1, rules version `shooter-demo-v1`, scenario ID `practice`, initial HP/damage/equipment configuration, and ordered player decisions. Loading validates those inputs and regenerates boss actions through practice. Computed state and events are not stored as trusted inputs. Unknown versions are rejected. No randomness is used yet; future randomness must have an explicit seed.
 
 ## Practice sandbox
 
-- Practice uses the existing training encounter's two boss shots: middle lane warned at 1,500 ms and hit at 2,500 ms; top lane warned at 3,000 ms and hit at 4,000 ms. No further shots are scheduled yet.
+- Practice repeats a five-second boss cycle: middle lane warned at +1,500 ms and hit at +2,500 ms; top lane warned at +3,000 ms and hit at +4,000 ms. Bottom is intentionally safe in this teaching pattern.
 - Choose Wide Shot or Laser, and whether VX-5 rockets are equipped, before the first action. Equipment is fixed for that run.
 - The player chooses a timestamp and a move, corrosion application, confirmed weapon hit, or time advance. Boss warnings due by that timestamp are submitted first in chronological order. The engine resolves pending impacts and expiration using the existing rules.
-- Actions are instantaneous and have no resource cost or firing interval in this sandbox. Multiple hits at one time are allowed; this is a timing experiment rather than a balanced real-time fight.
+- Practice accepts one confirmed hit per weapon interval: Wide Shot 250 ms, Laser 500 ms, VX-5 1,000 ms. Each weapon has an independent readiness time, initially 0. Accept hits exactly at readiness; reject earlier hits without changing the session or advancing time. Update readiness only when the hit actually resolves. Core/training hit resolution remains independent of this cadence policy.
+- Other actions are instantaneous with no resource cost. Corrosion still cannot be refreshed while active. There is no projectile launch/flight simulation; practice cadence bounds confirmed hit opportunities for this demo.
 - The +0.25s and +1s buttons advance from the current battle time. Editing the time field alone does not advance anything. Any other action uses the time entered in that field.
 - Reapplication while corrosion is active is still unsupported; a rejected decision leaves the session unchanged.
 - Both boss actions and player decisions are recorded in order in memory. Replay starts from that run's original equipment and HP and reproduces its events. Watching a replay does not alter the practice session; the player can return and continue it.
-- Time-only decisions can advance the final state without adding combat events. A replay with no combat events shows the final clock value. Runs are not saved across browser reloads, and New practice clears the current run.
+- Time-only decisions can advance the final state without adding combat events. A replay with no combat events shows the final clock value. New practice clears the active run but does not delete the saved slot.
+- Save run persists one practice run in browser storage; Load saved run reconstructs it. JSON export/import supports portability. Invalid files or failed storage operations do not replace the current session. Practice timestamps are bounded to 120 seconds, and saved files to 2,000 decisions and a bounded JSON size.
+- The complete example obeys practice cadence and wins at 7,500 ms with 100 player HP remaining. `examples/victory.json` stores its portable inputs. Training replay remains a short diagnostic excerpt, not a completed encounter.
 
 ## Previous learning example
 
