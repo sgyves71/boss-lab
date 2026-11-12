@@ -1,7 +1,7 @@
-import { actInPractice, createPractice, MAX_PRACTICE_TIME_MS, type PlayerAction, type PracticeSession } from './practice.ts';
+import { actInPractice, createPractice, CURRENT_RULES_VERSION, MAX_PRACTICE_TIME_MS, type PlayerAction, type PracticeSession } from './practice.ts';
 import { isMainWeapon } from './combat.ts';
 
-export const RULES_VERSION = 'shooter-demo-v1';
+export const RULES_VERSION = CURRENT_RULES_VERSION;
 export const SAVED_RUN_KEY = 'boss-lab.saved-run.v1';
 const MAX_DECISIONS = 2000;
 
@@ -41,7 +41,7 @@ export function serializeRun(session: PracticeSession): string {
   const initial = session.initialState;
   const serialized = JSON.stringify({
     formatVersion: 1,
-    rulesVersion: RULES_VERSION,
+    rulesVersion: session.rulesVersion,
     scenarioId: 'practice',
     initial: {
       playerHp: initial.playerHp, bossHp: initial.bossHp, bossShotDamage: initial.bossShotDamage,
@@ -59,7 +59,8 @@ export function deserializeRun(serialized: string): PracticeSession {
   let parsed: unknown;
   try { parsed = JSON.parse(serialized); } catch { throw new Error('Saved replay is not valid JSON'); }
   const saved = record(parsed);
-  if (saved.formatVersion !== 1 || saved.rulesVersion !== RULES_VERSION || saved.scenarioId !== 'practice') {
+  if (saved.formatVersion !== 1 || (saved.rulesVersion !== 'shooter-demo-v1' && saved.rulesVersion !== RULES_VERSION)
+    || saved.scenarioId !== 'practice') {
     throw new Error('Saved replay uses an unsupported format, scenario, or rules version');
   }
   const initial = record(saved.initial);
@@ -76,7 +77,7 @@ export function deserializeRun(serialized: string): PracticeSession {
     mainWeapon: initial.mainWeapon, vx5Equipped: initial.vx5Equipped,
     playerHp: initial.playerHp as number, bossHp: initial.bossHp as number,
     bossShotDamage: initial.bossShotDamage as number,
-  });
+  }, saved.rulesVersion);
   for (const input of saved.decisions) session = actInPractice(session, decision(input));
   return session;
 }

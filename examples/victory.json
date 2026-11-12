@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "rulesVersion": "shooter-demo-v1",
+  "rulesVersion": "shooter-demo-v2",
   "scenarioId": "practice",
   "initial": {
     "playerHp": 100,

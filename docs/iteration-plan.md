@@ -18,12 +18,13 @@ GitHub CI checks changes; it does not automatically publish the Site. Sites depl
 
 | Iteration | Player-visible result | Evidence |
 | --- | --- | --- |
-| Broader boss pattern | Every lane becomes unsafe at a readable time | Warning, movement-boundary, and replay tests |
 | Better practice controls | Submit the next legal shot without manually calculating its ready time | Cadence and keyboard/browser journeys |
 | Vulnerability window | Timing corrosion around boss behavior changes the outcome | Explicit duration/order specification and focused engine tests |
 | Continuous movement | Position changes smoothly while the same combat rules resolve hits | Separate movement/collision tests and replay input design |
 
 Choose one next iteration rather than combining them into a large engine rewrite. A rules change must either increment the saved replay's rules version with a clear rejection/migration policy, or retain an older resolver. Existing saved runs should never silently acquire different results under the same version.
+
+The first iteration adds a bottom-lane attack and a six-second cycle. Current rules use `shooter-demo-v2`, while v1 saves continue under the preserved two-lane schedule. The two example JSON files and compatibility tests make the changed outcome visible.
 
 ## What remains deliberately small
 

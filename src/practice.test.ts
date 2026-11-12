@@ -22,12 +22,13 @@ test('player chooses corrosion and movement times, and recorded actions replay i
   assert.equal(initial.state.bossHp, 500);
 });
 
-test('jumping across both boss shots resolves them once and in order', () => {
+test('jumping across three boss shots resolves them once and in order', () => {
   let session = actInPractice(createPractice(), { type: 'advance-time', atMs: 5000 });
-  assert.equal(session.state.playerHp, 90); // Middle hit, then top missed.
-  assert.deepEqual(session.frames.map((frame) => frame.event.atMs), [1500, 2500, 3000, 4000]);
+  assert.equal(session.state.playerHp, 90); // Middle hit, top missed; bottom shot is still pending.
+  assert.deepEqual(session.frames.map((frame) => frame.event.atMs), [1500, 2500, 3000, 4000, 4500]);
   session = actInPractice(session, { type: 'advance-time', atMs: 6000 });
-  assert.equal(session.frames.length, 4);
+  assert.deepEqual(session.frames.map((frame) => frame.event.atMs), [1500, 2500, 3000, 4000, 4500, 5500]);
+  assert.equal(session.state.playerHp, 90); // Bottom shot also misses the idle middle-lane player.
   assert.deepEqual(replayBattle(session.initialState, session.actions).finalState, session.state);
 });
 
@@ -66,24 +67,28 @@ test('cadence rejects early hits, accepts the exact ready time, and tracks weapo
   assert.equal(laser.state.bossHp, 472);
 });
 
-test('boss pattern repeats every five seconds and can defeat an idle player', () => {
+test('boss pattern repeats every six seconds and can defeat an idle player', () => {
   const session = actInPractice(createPractice(), { type: 'advance-time', atMs: 8000 });
-  assert.equal(session.state.playerHp, 80);
+  assert.equal(session.state.playerHp, 90);
   const warnings = session.frames.filter((frame) => frame.event.type === 'boss-shot-fired');
-  assert.deepEqual(warnings.map((frame) => frame.event.atMs), [1500, 3000, 6500, 8000]);
+  assert.deepEqual(warnings.map((frame) => frame.event.atMs), [1500, 3000, 4500, 7500]);
+  assert.deepEqual(warnings.map((frame) => frame.event.type === 'boss-shot-fired' ? frame.event.lane : null),
+    ['middle', 'top', 'bottom', 'middle']);
   const defeated = actInPractice(createPractice(), { type: 'advance-time', atMs: 60000 });
   assert.equal(defeated.state.result, 'player-defeated');
-  assert.equal(defeated.state.timeMs, 47500);
+  assert.equal(defeated.state.timeMs, 56500);
   assert.deepEqual(replayBattle(defeated.initialState, defeated.actions).finalState, defeated.state);
   assert.throws(() => actInPractice(createPractice(), { type: 'advance-time', atMs: 120001 }), /120 seconds/);
 });
 
-test('the complete example uses legal cadence, dodges across cycles, and wins reproducibly', () => {
+test('the complete example uses legal cadence, takes both targeted hits, and wins reproducibly', () => {
   const example = createExampleVictory();
   assert.equal(example.state.result, 'boss-defeated');
   assert.equal(example.state.bossHp, 0);
-  assert.equal(example.state.playerHp, 90);
+  assert.equal(example.state.playerHp, 80);
   assert.equal(example.state.timeMs, 7500);
   assert.deepEqual(replayBattle(example.initialState, example.actions).finalState, example.state);
-  assert.ok(example.frames.some((frame) => frame.event.type === 'boss-shot-fired' && frame.event.atMs === 6500));
+  assert.deepEqual(example.frames.filter((frame) => frame.event.type === 'player-damaged')
+    .map((frame) => frame.event.atMs), [2500, 5500]);
+  assert.ok(example.frames.some((frame) => frame.event.type === 'boss-shot-fired' && frame.event.atMs === 7500));
 });

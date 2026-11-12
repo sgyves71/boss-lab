@@ -21,7 +21,7 @@ test('save survives reload, exports portable inputs, and imports without trustin
   const download = await downloadEvent;
   const file = await readFile((await download.path())!, 'utf8');
   const saved = JSON.parse(file);
-  expect(saved.rulesVersion).toBe('shooter-demo-v1');
+  expect(saved.rulesVersion).toBe('shooter-demo-v2');
   expect(saved.decisions).toHaveLength(2);
   expect(saved.initial.mainWeapon).toBe('laser');
   expect(saved).not.toHaveProperty('frames');
@@ -52,4 +52,22 @@ test('storage denial leaves practice usable and reports save/load errors', async
   await expect(page.locator('#save-status')).toContainText('Could not load');
   await page.getByRole('button', { name: 'Wide Shot hit', exact: true }).click();
   await expect(page.getByTestId('boss-hp')).toHaveText('492 / 500');
+});
+
+test('an existing v1 browser save keeps its original pattern and can continue', async ({ page }) => {
+  const fixture = JSON.parse(await readFile(new URL('../../examples/victory-v1.json', import.meta.url), 'utf8'));
+  fixture.decisions = fixture.decisions.filter((input: { atMs: number }) => input.atMs <= 5000);
+  await page.goto('/');
+  await page.evaluate((saved) => localStorage.setItem('boss-lab.saved-run.v1', JSON.stringify(saved)), fixture);
+  await page.getByRole('button', { name: 'Load saved run', exact: true }).click();
+  await expect(page.locator('#pattern-description')).toContainText('Legacy saved run (v1)');
+  await page.getByLabel('Action time (seconds)').fill('6.5');
+  await page.getByRole('button', { name: 'Advance to time', exact: true }).click();
+  await expect(page.locator('#combat-log')).toContainText('6.500sWarning: middle lane targeted');
+  await page.getByRole('button', { name: 'Save run', exact: true }).click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('boss-lab.saved-run.v1')!));
+  expect(saved.rulesVersion).toBe('shooter-demo-v1');
+  await page.getByRole('button', { name: 'New practice', exact: true }).click();
+  await expect(page.locator('#pattern-description')).toContainText('Every 6 seconds');
+  await expect(page.locator('#pattern-description')).toContainText('bottom at +5.500s');
 });

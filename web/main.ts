@@ -74,7 +74,7 @@ app.innerHTML = `
           <section id="practice-controls" class="practice-controls" hidden aria-label="Practice controls">
             <div class="practice-heading"><strong>Your decisions</strong><button id="new-practice" type="button" class="text-button">New practice</button></div>
             <div class="loadout-controls"><label>Main weapon<select id="main-weapon" aria-label="Main weapon"><option value="wide-shot">Wide Shot · 8 / hit</option><option value="laser">Laser · 14 / hit</option></select></label><label class="checkbox-label"><input id="rockets-equipped" type="checkbox" checked /> Equip VX-5 rockets</label></div>
-            <p class="practice-hint">Choose equipment before your first action. Every 5 seconds: middle impact at +2.500s, then top impact at +4.000s. Each has a 1-second warning.</p>
+            <p id="pattern-description" class="practice-hint"></p>
             <p id="pattern-status" class="practice-hint"></p>
             <div class="time-controls"><label for="action-time">Action time (seconds)<input id="action-time" type="number" min="0" step="0.001" value="0.000" /></label><button id="add-quarter" class="action-button" type="button">+0.25s</button><button id="add-second" class="action-button" type="button">+1s</button><button id="wait" class="action-button" type="button">Advance to time</button></div>
             <fieldset class="lane-controls"><legend>Move at this time</legend><button type="button" class="action-button" data-move="top">Top lane</button><button type="button" class="action-button" data-move="middle">Middle lane</button><button type="button" class="action-button" data-move="bottom">Bottom lane</button></fieldset>
@@ -212,6 +212,9 @@ function render() {
     element<HTMLButtonElement>('apply-corrosion').disabled = finished;
     element<HTMLButtonElement>('replay-run').disabled = practice.actions.length === 0;
     text('main-hit', `${state.mainWeapon === 'laser' ? 'Laser' : 'Wide Shot'} hit`);
+    text('pattern-description', practice.rulesVersion === 'shooter-demo-v1'
+      ? 'Legacy saved run (v1). Every 5 seconds: middle impact at +2.500s, then top at +4.000s. Each has a 1-second warning. New practice starts with the current three-lane rules.'
+      : 'Choose equipment before your first action. Every 6 seconds: middle impact at +2.500s, top at +4.000s, bottom at +5.500s. Each has a 1-second warning.');
     const nextWarning = nextBossWarning(practice);
     text('pattern-status', finished ? 'Encounter finished.' : `Next warning: ${nextWarning.lane} lane at ${(nextWarning.atMs / 1000).toFixed(3)}s. Impact at ${(nextWarning.impactAtMs / 1000).toFixed(3)}s.`);
     const readiness = (weapon: MainWeapon | 'vx-5') => practice.nextHitAtMs[weapon] <= state.timeMs
