@@ -59,6 +59,8 @@ If a scheduled boss shot defeats the player while advancing to a later action, s
 
 The event list describes only the current call. When collecting a full log, append each returned list in order. No UI, storage, or real-time scheduler is needed for resolution.
 
+Resolution also returns `frames`: each frame pairs an emitted event with a new state snapshot immediately after that event. These let replay viewers step through multiple events at one timestamp without predicting or recalculating combat rules. `state` remains the final state after the whole action. An `advance-time` action with no emitted effects can therefore advance the final state without adding a frame. A lethal hit's damage frame can show zero HP immediately before the following defeat frame records the finished result.
+
 ## Replay contract
 
 The same starting state and ordered timestamped actions must produce identical states and events under the same rules version. A future saved replay will record the scenario, rules version, loadout, starting state, and actions. No randomness is used yet; future randomness must have an explicit seed.

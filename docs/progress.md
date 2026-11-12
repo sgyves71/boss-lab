@@ -30,9 +30,18 @@ The original turn-based example is preserved in Git history. Shield Corrosion re
 - One boss projectile may be pending at a time. Continuous movement, attack generation, and actual homing remain future work.
 - `npm run check` passes strict type-checking and all 17 tests. The expanded terminal demo shows both a dodge and taking damage.
 
+## Interactive replay
+
+- Timed shooter damage and lane dodging committed as `2ee2afd`.
+- Browser replay runs locally with `npm run dev`, using Vite and plain TypeScript.
+- Shared training actions in `src/scenario.ts` drive both the terminal demo and browser replay.
+- The engine emits individual event frames, letting the viewer show corrosion expiration, incoming damage, and rocket damage separately at 4 seconds. The replay runner uses engine snapshots rather than duplicating rules in the UI.
+- The screen includes HP, three lanes, boss warnings, remaining corrosion time, explanations, ordered log, Next event, Previous event, and Restart controls.
+- Verification: strict core/browser type-checking, 19 engine/replay tests, production build, and three Playwright browser checks pass. Desktop and narrow-screen screenshots were visually inspected. Playback remains scripted; ship control is a later milestone.
+
 ## Next milestones
 
 1. Review the HP and dodge sequence, then choose further boss mechanics: vulnerability windows and meaningful choices about Shield Corrosion timing.
-2. Build a replay runner with a step-by-step view of state and events.
+2. Replay runner and step-by-step view are complete; review the encounter in the browser before adding mechanics.
 3. Build a small playable encounter, then add movement, collisions, and homing simulation in manageable steps.
 4. Add replay persistence, browser journey coverage, and GitHub Actions when those layers exist. Keep one Cypress replay scenario for the migration comparison.

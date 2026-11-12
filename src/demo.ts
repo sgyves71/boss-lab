@@ -1,20 +1,11 @@
-import { createBattle, resolveEvent, type BattleAction } from './combat.ts';
+import { resolveEvent } from './combat.ts';
+import { createTrainingBattle, TRAINING_ACTIONS } from './scenario.ts';
 
-let state = createBattle();
-const actions: readonly BattleAction[] = [
-  { type: 'hit', atMs: 0, weapon: 'wide-shot' },
-  { type: 'apply-shield-corrosion', atMs: 1000 },
-  { type: 'boss-fire', atMs: 1500, lane: 'middle', impactAtMs: 2500 },
-  { type: 'move', atMs: 2000, lane: 'top' },
-  { type: 'advance-time', atMs: 2500 },
-  { type: 'boss-fire', atMs: 3000, lane: 'top', impactAtMs: 4000 },
-  { type: 'hit', atMs: 3999, weapon: 'vx-5' },
-  { type: 'hit', atMs: 4000, weapon: 'vx-5' },
-];
+let state = createTrainingBattle();
 
 console.log('Boss Lab: Wide Shot + VX-5. Player HP: 100, boss HP: 500.');
 console.log('Times are simulated. Each hit is one projectile that landed.\n');
-for (const action of actions) {
+for (const action of TRAINING_ACTIONS) {
   const resolution = resolveEvent(state, action);
   state = resolution.state;
   for (const event of resolution.events) {

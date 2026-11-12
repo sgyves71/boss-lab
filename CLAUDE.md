@@ -15,3 +15,5 @@ Boss Lab is a TypeScript horizontal shooter boss-combat prototype designed aroun
 - `npm run typecheck` checks source and tests with strict TypeScript settings without emitting JavaScript.
 - `npm run check` runs type-checking followed by all engine tests. Run it before committing.
 - `npm run demo` prints the timed shooter sequence, lane warnings and dodges, and both fighters' HP without waiting in real time.
+- `npm run dev` starts the local replay screen. Browser presentation lives in `web/`, with its own DOM-aware TypeScript configuration; the core engine remains independent of browser APIs.
+- `npm run build` builds the browser app. `npm run test:e2e` runs the Playwright journeys (install Chromium first with `npx playwright install chromium`). Run both for UI changes.

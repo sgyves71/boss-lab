@@ -60,7 +60,12 @@ export type CombatEvent =
   | Readonly<{ type: 'player-defeated'; atMs: number }>
   | Readonly<{ type: 'boss-defeated'; atMs: number }>;
 
-export type Resolution = Readonly<{ state: BattleState; events: readonly CombatEvent[] }>;
+export type EventFrame = Readonly<{ state: BattleState; event: CombatEvent }>;
+export type Resolution = Readonly<{
+  state: BattleState;
+  events: readonly CombatEvent[];
+  frames: readonly EventFrame[];
+}>;
 
 /** Advance the shared battle timeline without reading a clock or mutating input. */
 export function resolveEvent(state: BattleState, action: BattleAction): Resolution {
@@ -80,6 +85,11 @@ export function resolveEvent(state: BattleState, action: BattleAction): Resoluti
 
   const next = { ...state, timeMs: action.atMs };
   const events: CombatEvent[] = [];
+  const frames: EventFrame[] = [];
+  function emit(event: CombatEvent): void {
+    events.push(event);
+    frames.push({ event, state: { ...next, timeMs: event.atMs } });
+  }
 
   // Process scheduled effects chronologically before the submitted action.
   while (true) {
@@ -90,20 +100,20 @@ export function resolveEvent(state: BattleState, action: BattleAction): Resoluti
     if (dueAtMs > action.atMs) break;
     if (expiresAtMs <= impactAtMs) {
       next.shieldCorrosion = null;
-      events.push({ type: 'shield-corrosion-expired', atMs: expiresAtMs });
+      emit({ type: 'shield-corrosion-expired', atMs: expiresAtMs });
     } else {
       const shot = next.pendingBossShot!;
       next.pendingBossShot = null;
       if (shot.lane !== next.playerLane) {
-        events.push({ type: 'boss-shot-dodged', atMs: impactAtMs, lane: shot.lane });
+        emit({ type: 'boss-shot-dodged', atMs: impactAtMs, lane: shot.lane });
       } else {
         next.playerHp = Math.max(0, next.playerHp - shot.damage);
-        events.push({ type: 'player-damaged', atMs: impactAtMs, amount: shot.damage });
+        emit({ type: 'player-damaged', atMs: impactAtMs, amount: shot.damage });
         if (next.playerHp === 0) {
           next.result = 'player-defeated';
           next.timeMs = impactAtMs;
-          events.push({ type: 'player-defeated', atMs: impactAtMs });
-          return { state: next, events };
+          emit({ type: 'player-defeated', atMs: impactAtMs });
+          return { state: next, events, frames };
         }
       }
     }
@@ -112,7 +122,7 @@ export function resolveEvent(state: BattleState, action: BattleAction): Resoluti
   switch (action.type) {
     case 'move':
       next.playerLane = action.lane;
-      events.push({ type: 'player-moved', atMs: action.atMs, lane: action.lane });
+      emit({ type: 'player-moved', atMs: action.atMs, lane: action.lane });
       break;
     case 'boss-fire':
       if (next.pendingBossShot !== null) {
@@ -121,7 +131,7 @@ export function resolveEvent(state: BattleState, action: BattleAction): Resoluti
       next.pendingBossShot = {
         lane: action.lane, impactAtMs: action.impactAtMs, damage: next.bossShotDamage,
       };
-      events.push({ type: 'boss-shot-fired', atMs: action.atMs,
+      emit({ type: 'boss-shot-fired', atMs: action.atMs,
         lane: action.lane, impactAtMs: action.impactAtMs });
       break;
     case 'apply-shield-corrosion':
@@ -129,22 +139,22 @@ export function resolveEvent(state: BattleState, action: BattleAction): Resoluti
         throw new Error('Shield Corrosion refresh and stacking are not supported in this prototype');
       }
       next.shieldCorrosion = { startedAtMs: action.atMs, durationMs: SHIELD_CORROSION_DURATION_MS };
-      events.push({ type: 'shield-corrosion-applied', atMs: action.atMs, durationMs: SHIELD_CORROSION_DURATION_MS });
+      emit({ type: 'shield-corrosion-applied', atMs: action.atMs, durationMs: SHIELD_CORROSION_DURATION_MS });
       break;
     case 'hit': {
       const amount = action.weapon === 'vx-5'
         ? VX5_DAMAGE_PER_HIT * (next.shieldCorrosion === null ? 1 : 2)
         : MAIN_WEAPONS[action.weapon].damagePerHit;
       next.bossHp = Math.max(0, next.bossHp - amount);
-      events.push({ type: 'damage', atMs: action.atMs, weapon: action.weapon, amount });
+      emit({ type: 'damage', atMs: action.atMs, weapon: action.weapon, amount });
       if (next.bossHp === 0) {
         next.result = 'boss-defeated';
-        events.push({ type: 'boss-defeated', atMs: action.atMs });
+        emit({ type: 'boss-defeated', atMs: action.atMs });
       }
       break;
     }
     case 'advance-time':
       break;
   }
-  return { state: next, events };
+  return { state: next, events, frames };
 }
